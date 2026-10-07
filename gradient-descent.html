@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why a bigger step can make things worse · Explorables</title>
+  <link rel="stylesheet" href="theme.css">
+  <script src="explorable.js"></script>
+  <script src="gradient-descent.js" defer></script>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="index.html">← Explorables</a>
+    <button id="theme" type="button">Dark</button>
+  </nav>
+
+  <main>
+    <header>
+      <p class="kicker">Gradient descent</p>
+      <h1>Why a bigger step can make things worse</h1>
+      <p class="dek">Every weight in a trained model was set by the same small loop, run millions of times. One number in that loop decides whether training settles, crawls, or blows up.</p>
+    </header>
+
+    <h2>Where the weights came from</h2>
+    <p>If you have served a large model, you have handled its weights: sharded them across GPUs, streamed layers through a pipeline, budgeted memory around them. Billions of numbers, and inference only ever reads them.</p>
+    <p>Before training, every one of those numbers was random, and the model produced noise. Training is what turned the noise into weights worth serving, and it does that with a loop small enough to fit in four lines:</p>
+    <ol class="loop">
+      <li>Run the model forward on an example, exactly as inference would.</li>
+      <li>Score how wrong the output was. That score is the <span class="v loss">loss</span>.</li>
+      <li>Work out, for every weight, which way to nudge it so the loss goes down. Together those directions are the <span class="v">gradient</span>; computing them is the backward pass.</li>
+      <li>Nudge every weight a little in its direction. How far is set by one number, the <span class="v rate">learning rate</span>.</li>
+    </ol>
+    <p>One trip around the loop is a <em>step</em>, and a training run is millions of steps. Before handing the loop over to the machine, run it yourself on a model with a single weight.</p>
+    <p>The model predicts how long a request takes from how many tokens it generates: latency = <span class="v param">w</span> × tokens, where <span class="v param">w</span> is milliseconds per token. Here are five real-looking requests. Pick a <span class="v param">w</span> by dragging the line.</p>
+
+    <figure id="fig-fit">
+      <div class="figure-row">
+        <div class="chart">
+          <p class="panel-title">Five requests, and your model's guess</p>
+          <svg id="fit" viewBox="0 0 420 290" role="img" aria-label="Five requests plotted by tokens and latency, with a draggable prediction line through the origin"></svg>
+        </div>
+        <div class="chart">
+          <p class="panel-title">Loss for every <span class="v param">w</span> you have tried</p>
+          <svg id="tried" viewBox="0 0 260 290" role="img" aria-label="Loss for each weight the reader has tried"></svg>
+        </div>
+      </div>
+      <figcaption><strong>Drag the end of the blue line</strong>, or the shaded number below. The vertical green gaps are the misses: how far each prediction landed from what the request actually took. The loss squares each miss and averages them, so one big miss counts more than several small ones.</figcaption>
+    </figure>
+
+    <p>At <span class="v param">w</span> = <x-scrub bind="guess" min="0" max="6" step="0.05" color="param"></x-scrub> ms per token, the line misses by about <x-show bind="typicalMiss" color="loss"></x-show> on a typical request, a loss of <x-show bind="fitLossText" color="loss"></x-show>.</p>
+    <p>Keep dragging until the right-hand chart shows a shape. Each setting you try leaves a dot, and the dots trace a bowl. The bottom of the bowl is the best weight this data allows, and getting there is all that training is for. When you dragged toward the bottom, you were following the gradient by feel: which way the loss falls, and how steeply.</p>
+    <p>A real model can't do it that way, for two reasons. It has billions of weights, so nobody drags them; the backward pass computes every weight's direction at once. And it never sees the whole bowl. It only knows the slope where it is standing, so it steps, looks again, and steps again. How long each step should be is the rest of this page.</p>
+
+    <h2>One step at a time</h2>
+    <p>Keep the shape and drop the units: a bowl whose bottom sits at <span class="v param">w</span> = 3, like the one you just traced.</p>
+    <p class="equation"><span class="v loss">L</span>(<span class="v param">w</span>) = (<span class="v param">w</span> − 3)²</p>
+    <p>Gradient descent looks at the slope where it stands and steps the other way, by an amount scaled by the <em>learning rate</em> <span class="v rate">η</span>:</p>
+    <p class="equation"><span class="v param">w</span> ← <span class="v param">w</span> − <span class="v rate">η</span> · <span class="v loss">L</span>′(<span class="v param">w</span>)</p>
+    <p>Starting from <span class="v param">w</span> = <x-show bind="w0" digits="1" color="param"></x-show> with a learning rate of <x-scrub bind="eta" min="0.01" max="1.2" step="0.01" color="rate"></x-scrub>, twenty steps end at <span class="v param">w</span> = <x-show bind="wFinal" digits="3" color="param"></x-show>, with a loss of <x-show bind="lossFinal" digits="4" color="loss"></x-show>. Drag the shaded number sideways, or click it and use the arrow keys.</p>
+
+    <figure id="fig-run">
+      <div class="controls">
+        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="eta" min="0.01" max="1.2" step="0.01" color="rate"></x-scrub></span>
+        <span>each step multiplies the distance to the bottom by <x-show bind="factor" digits="2"></x-show></span>
+      </div>
+      <div class="figure-row">
+        <div class="chart">
+          <p class="panel-title">The bowl, and the run on it</p>
+          <svg id="curve" viewBox="0 0 420 290" role="img" aria-label="Loss curve with the gradient descent run drawn as hops between points"></svg>
+        </div>
+        <div class="chart">
+          <p class="panel-title">Loss at each step, log scale</p>
+          <svg id="loss-steps" viewBox="0 0 260 290" role="img" aria-label="Loss after each step on a logarithmic scale"></svg>
+        </div>
+      </div>
+      <x-player bind="k" max="20" label="step"></x-player>
+      <figcaption><strong>Orange arcs are steps.</strong> Each one is <span class="v rate">η</span> times the slope where it took off, so steps shrink as the ground flattens. Drag the hollow start point anywhere on the curve, and press Play to watch the run unfold.</figcaption>
+      <details class="numbers"><summary>Show the numbers</summary><table id="run-table"></table></details>
+    </figure>
+
+    <p>Each update moves <span class="v param">w</span> by <span class="v rate">η</span> · 2(<span class="v param">w</span> − 3), so the distance to the bottom gets multiplied by the same number every step: 1 − 2<span class="v rate">η</span>, shown above the figure. With a small rate that number is just under 1, and the ball creeps. Try 0.05, then 0.3.</p>
+
+    <x-predict data-rate="eta" data-value="0.9" data-player="run">
+      <p class="predict-label">Predict first</p>
+      <p>At <span class="v rate">η</span> = 0.9 the first step carries <span class="v param">w</span> past the bottom, onto the other wall. What happens after that?</p>
+      <div class="answers">
+        <button type="button" data-answer="climbs">It keeps overshooting and climbs out</button>
+        <button type="button" data-answer="settles" data-correct>It bounces side to side but settles</button>
+        <button type="button" data-answer="stops">It stays on the far wall</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">It bounces and settles.</p>
+        <p>The multiplier is 1 − 2 × 0.9 = −0.8. The minus sign flips <span class="v param">w</span> to the other side of the bottom every step; the 0.8 still shrinks the distance. Overshooting is not failure, as long as each overshoot is smaller than the last.</p>
+      </div>
+    </x-predict>
+
+    <x-predict data-rate="eta" data-value="1.1" data-player="run">
+      <p class="predict-label">Predict again</p>
+      <p>Now <span class="v rate">η</span> = 1.1, only a little bigger. What happens?</p>
+      <div class="answers">
+        <button type="button" data-answer="faster">It settles even faster</button>
+        <button type="button" data-answer="forever">It bounces forever at the same width</button>
+        <button type="button" data-answer="wider" data-correct>Each bounce is wider than the last</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">Each bounce grows.</p>
+        <p>The multiplier is now −1.2: every step lands farther from the bottom than the one before, and the loss grows without bound. The first step alone goes from 0 to 6.6. A slightly bigger step size turned a working optimizer into a diverging one.</p>
+      </div>
+    </x-predict>
+
+    <h2>Every learning rate at once</h2>
+    <p>A single run tells you about a single <span class="v rate">η</span>. To see the pattern, step up a level: run the same twenty steps for every learning rate from 0 to 1.2, and plot only where each one ends.</p>
+
+    <figure id="fig-sweep">
+      <div class="figure-row">
+        <div class="chart">
+          <p class="panel-title">Loss after 20 steps, for each learning rate</p>
+          <svg id="sweep" viewBox="0 0 420 290" role="img" aria-label="Final loss after twenty steps plotted against learning rate"></svg>
+        </div>
+        <div class="chart">
+          <p class="panel-title" id="mini-title">The run behind η</p>
+          <svg id="mini" viewBox="0 0 260 290" role="img" aria-label="The single run for the learning rate under the pointer"></svg>
+        </div>
+      </div>
+      <figcaption><strong>Hover anywhere on the chart</strong> to step back down and see the single run behind that point; click to make it the learning rate for the whole page. The orange line marks the current <span class="v rate">η</span>.</figcaption>
+    </figure>
+
+    <p>The whole story is in that shape. Below 0.5, bigger is better: the ball creeps faster. At exactly 0.5 the multiplier is zero and a single step lands on the bottom, which is the dip to “≈0”. Between 0.5 and 1 the ball overshoots but still settles. At 1 the multiplier reaches −1, and past it every step makes things worse. There is no gentle decline at the edge; it is a cliff.</p>
+    <p>The edge depends on how steep the bowl is. For a bowl <em>a</em> times steeper, <span class="v loss">L</span> = <em>a</em>(<span class="v param">w</span> − 3)², the multiplier becomes 1 − 2<em>a</em><span class="v rate">η</span> and the cliff moves to <span class="v rate">η</span> = 1/<em>a</em>. Steeper ground demands smaller steps.</p>
+
+    <h2>Two directions, one step size</h2>
+    <p>A real model has millions of parameters, and its bowl is rarely round. Here are just two, <span class="v param">x</span> and <span class="v param">y</span>, in a valley ten times steeper across than along:</p>
+    <p class="equation"><span class="v loss">L</span> = ½ (<span class="v param">x</span>² + 10 <span class="v param">y</span>²)</p>
+    <p>One learning rate has to serve both directions. Along the valley each step multiplies the remaining distance by <x-show bind="alongFactor" digits="2"></x-show>; across it, by <x-show bind="acrossFactor" digits="2"></x-show>. At <span class="v rate">η</span> = <x-scrub bind="eta2" min="0.01" max="0.25" step="0.005" digits="3" color="rate"></x-scrub>, the loss falls below 0.001 after <x-show bind="settleSteps" color="loss"></x-show>.</p>
+
+    <figure id="fig-valley">
+      <div class="controls">
+        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="eta2" min="0.01" max="0.25" step="0.005" digits="3" color="rate"></x-scrub></span>
+        <span>settles in <x-show bind="settleSteps" color="loss"></x-show></span>
+      </div>
+      <svg id="valley" viewBox="0 0 690 300" role="img" aria-label="Contour map of an elongated valley with the gradient descent path"></svg>
+      <x-player bind="k2" max="40" label="step"></x-player>
+      <figcaption><strong>Rings are contours of equal loss</strong>, drawn to true scale. The blue path is forty steps of gradient descent. Drag the start point; push <span class="v rate">η</span> past 0.2 and watch the steep direction break first.</figcaption>
+    </figure>
+
+    <x-predict data-rate="eta2" data-value="0.19" data-player="valley">
+      <p class="predict-label">Predict first</p>
+      <p>The steep direction diverges at <span class="v rate">η</span> = 0.2, so set it just under that, at 0.19, to go as fast as possible. Which direction is still far from the bottom after forty steps?</p>
+      <div class="answers">
+        <button type="button" data-answer="along">Along the valley, the gentle one</button>
+        <button type="button" data-answer="across" data-correct>Across the valley, the steep one</button>
+        <button type="button" data-answer="neither">Neither; both have settled</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">The steep direction lags.</p>
+        <p>Across the valley the multiplier is |1 − 10 × 0.19| = 0.9, so the ball zigzags from wall to wall and the zigzag fades slowly. Along the valley it is |1 − 0.19| = 0.81, which is faster. Pushing toward the steep direction's limit made it the slow one.</p>
+        <p>The best single rate balances the two, where 1 − <span class="v rate">η</span> = 10<span class="v rate">η</span> − 1, giving <span class="v rate">η</span> = 2/11 ≈ 0.18. Even then each step removes only about 18% of the remaining distance. The steeper the valley compared with its floor, the worse this gets. That ratio is called the <em>condition number</em>, and it is why optimizers such as Adam give each parameter its own effective step size.</p>
+      </div>
+    </x-predict>
+
+    <aside class="limits">
+      <p><strong>Where this model stops.</strong> Real losses are not perfect bowls: the steepness changes as the parameters move, so a rate that is safe in one place can be too large in another. Real gradients are usually estimated from a small batch of data and are noisy. Schedules that change the rate over time, warmup, and momentum all exist to handle these effects. The bowl is the picture close to a minimum, where the same arithmetic holds. For a fuller treatment, see <a href="https://d2l.ai/chapter_optimization/gd.html">Dive into Deep Learning §12.3</a>.</p>
+    </aside>
+
+    <h2>Try it without the page</h2>
+    <details class="check">
+      <summary>For L(w) = 3(w − 1)², what is the largest learning rate that still settles, and which rate reaches the bottom in one step?</summary>
+      <p>The slope is 6(w − 1), so each step multiplies the distance to the bottom by 1 − 6η. That settles while |1 − 6η| &lt; 1, so η &lt; 1/3. One step lands exactly when 1 − 6η = 0, at η = 1/6. The rule from the bowl holds: for a bowl three times steeper, everything happens at a third of the rate.</p>
+    </details>
+  </main>
+</body>
+</html>
