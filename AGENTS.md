@@ -1,5 +1,7 @@
 # Authoring explorables
 
+This guide is for everyone who writes or changes a page, people and coding agents alike. The pages are published for a general audience, so write for a stranger who has only the page's prerequisites.
+
 An explorable teaches **one idea**, using the **smallest model** that makes it visible, to a reader who has its **prerequisites**. The reader operates the model; the author still leads the argument.
 
 ## Plan the outline before building pages
@@ -66,3 +68,11 @@ Every page opens with a short section that does three jobs: show why the idea ma
 
 - No build step. Pages load `theme.css` and `explorable.js` as a classic script so they open from disk. Shared blocks are listed in `README.md`.
 - Before calling a page done: load it in a headless browser, drive every control, prediction and drag, confirm there are no console errors, and look at screenshots in light mode, dark mode and at phone width.
+
+## Contributing changes
+
+- `main` is the published site: GitHub Pages serves the repository root, so every merge to `main` goes live. Work on a branch and open a pull request.
+- A new page starts as a pull request that adds or changes its outline entry in `README.md`; build the page once the entry is agreed.
+- A pull request that adds or changes a page states which controls, predictions and views were checked, and attaches light, dark and phone-width screenshots.
+- Cite a source for every historical or factual claim, linked from the page.
+- Keep shared blocks backwards compatible with every page, or update every page in the same change.

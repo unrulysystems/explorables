@@ -1,9 +1,13 @@
 # Explorables
 
-Explorable explanations: essays whose examples the reader can change. Each page
-asks for a prediction, then lets the model show what actually happens.
+Explorable explanations of how language models learn: essays whose examples
+the reader can change. Each page asks for a prediction, then lets the model
+show what actually happens. The series starts from multiplication and averages
+and builds, one idea per page, toward attention.
 
-Open `index.html` in a browser. There is nothing to install or build.
+Read them at <https://unrulysystems.github.io/explorables/>, or clone the
+repository and open `index.html` in a browser. There is nothing to install or
+build.
 
 ## Pages
 
@@ -37,7 +41,7 @@ pages 3 and 4 and will be split and reworked to match.
      ones near the answer, without anyone planning it.
    - Assumes: page 1.
    - Afterwards: compute the slope of squared error for one weight and take
-     one step by hand (the wiki's lesson 4 exercise).
+     one step by hand.
 3. **How big a nudge: the learning rate** (draft in `gradient-descent.html`)
    - Idea: the step is the learning rate times the slope; on a bowl, each step
      multiplies the distance to the bottom by the same number, 1 − 2aη.
@@ -72,7 +76,7 @@ pages 3 and 4 and will be split and reworked to match.
      without adding any evidence.
    - Assumes: exponentials as repeated multiplication; none of pages 1–4.
    - Afterwards: compute softmax for two scores, and say what shifting or
-     scaling them does (the wiki's lesson 3 exercise).
+     scaling them does.
 6. **Learning from the word that came next** (*planned*)
    - Idea: the loss for words is the negative log of the probability the model
      gave the word that actually followed.
@@ -94,7 +98,7 @@ pages 3 and 4 and will be split and reworked to match.
    - Surprise: a longer vector scores higher without matching any better.
    - Assumes: arithmetic only.
    - Afterwards: compute a dot product, and say when a high score does not
-     mean a better match (the wiki's lesson 2 exercise).
+     mean a better match.
 8. **Words as points** (*planned*)
    - Idea: each token is a learned row of numbers, its embedding; the next
      word is chosen by scoring every token's row against where the model ends
@@ -132,12 +136,11 @@ pages 3 and 4 and will be split and reworked to match.
      removes it entirely.
    - Assumes: pages 5, 7 and 8.
    - Afterwards: compute two attention weights and the weighted value, with and
-     without a mask (the wiki's lesson 5 exercise).
+     without a mask.
 
-The order differs from the ai-wiki learning path, which goes vectors, loss,
-then gradients: gradient descent on one number needs neither vectors nor
-softmax, so it comes first here. Worked numbers match the wiki where topics
-overlap.
+Many courses start with vectors, then loss, then gradients. Here gradient
+descent comes first, because on one number it needs neither vectors nor
+softmax.
 
 ## Building blocks
 
@@ -154,3 +157,18 @@ Every page loads two shared files and adds its own script:
 
 A page's own script holds its model as pure functions and draws each figure
 from model output, so nothing on screen moves unless the model says so.
+
+## Contributing
+
+Issues and pull requests are welcome. [`AGENTS.md`](AGENTS.md) is the
+authoring guide for people and coding agents alike: how a page is planned in
+the outline above, how it is written, and how it is checked before it is
+merged. A new page starts as an outline entry, agreed before any page is built.
+
+## License
+
+Code (`*.js`, `*.css`, and the markup of `*.html`) is under the
+[MIT License](LICENSE). The essays' text and figures are under
+[Creative Commons Attribution 4.0](LICENSE-CONTENT): you may share and adapt
+them, including translations, with credit to Unruly Systems and a link to this
+repository.
