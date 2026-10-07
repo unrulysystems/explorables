@@ -197,7 +197,7 @@
       nodes.push(text(xOf(w), area.bottom + 16, String(w), { class: "tick", "text-anchor": "middle" }));
     }
     nodes.push(text(area.left - 6, area.top - 18, "step", { "text-anchor": "end" }));
-    nodes.push(text(area.right, area.bottom + 16, "guess w", { "text-anchor": "end", class: "label-strong" }));
+    nodes.push(text(area.right, area.top - 18, "guess w", { "text-anchor": "end", class: "label-strong" }));
     nodes.push(svg("line", { class: "threshold", x1: xOf(KM_PER_MILE), x2: xOf(KM_PER_MILE), y1: area.top - 6, y2: area.bottom }));
     nodes.push(text(xOf(KM_PER_MILE) + 6, area.bottom - 6, "1.609 km per mile", { class: "tick" }));
     return nodes;
