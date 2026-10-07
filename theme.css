@@ -256,7 +256,7 @@ x-player {
   color: var(--ink-muted);
   margin-top: 0.5rem;
 }
-x-player input[type="range"] { flex: 1; accent-color: var(--c-param); }
+x-player input[type="range"] { flex: 1; min-width: 0; accent-color: var(--c-param); }
 x-player .player-readout { min-width: 6.5em; text-align: right; font-variant-numeric: tabular-nums; }
 .player-toggle, x-predict button, .pill {
   font: 600 0.8125rem var(--sans);

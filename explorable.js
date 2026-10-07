@@ -13,7 +13,7 @@
      <x-scrub bind="eta" min="0" max="1" step="0.01" color="rate">  drag or arrow keys
      <x-show bind="loss" digits="3">                                 live value in prose
      <x-predict> buttons[data-answer], one [data-correct], [data-reveal] block
-     <x-player bind="k" max="20">                                    play / step through time
+     <x-player bind="k" max="20">                                    play / step through time; max may change
 */
 "use strict";
 
@@ -216,9 +216,19 @@
     }
   }
 
-  /* Transport for an independent variable such as the step index. */
+  /* Transport for an independent variable such as the step index. A page may change `max` later,
+     for example when a run's length depends on the reader's settings. */
   class Player extends HTMLElement {
     static FRAME_MS = 260;
+    static observedAttributes = ["max"];
+
+    attributeChangedCallback() {
+      if (!this.range) return; // connectedCallback reads the first value
+      this.max = numberAttribute(this, "max");
+      this.range.max = String(this.max);
+      if (this.state.value > this.max) this.state.value = this.max;
+      this.#render();
+    }
 
     connectedCallback() {
       this.state = lookup(this.getAttribute("bind"));
@@ -233,8 +243,10 @@
 
       this.button.addEventListener("click", () => (this.timer === null ? this.play() : this.pause()));
       this.range.addEventListener("input", () => {
+        // Read before pausing: pause() re-renders the slider from the old state.
+        const chosen = Number(this.range.value);
         this.pause();
-        this.state.value = Number(this.range.value);
+        this.state.value = chosen;
       });
       this.state.subscribe(() => this.#render());
       this.#render();
