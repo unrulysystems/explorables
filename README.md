@@ -28,7 +28,7 @@ pages 3 and 4 and will be split and reworked to match.
    - Assumes: multiplication and averages.
    - Afterwards: given three trips and a guess, compute the loss and say which
      way to nudge.
-2. **The slope says which way, and roughly how far** (*planned*)
+2. **The slope says which way, and roughly how far** (`slope.html`)
    - Idea: the slope of the loss at the current guess, computed from the
      examples in one calculation, gives the nudge direction without trying
      both ways. The curve stays hidden; the reader sees only the current loss

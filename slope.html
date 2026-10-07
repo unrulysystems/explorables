@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The slope says which way, and roughly how far · Explorables</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    .trips { width: 100%; border-collapse: collapse; font: 0.875rem var(--sans); font-variant-numeric: tabular-nums; }
+    .trips th { font-weight: 600; color: var(--ink-muted); text-align: right; padding: 0 0.6rem 0.4rem 0; border-bottom: 1px solid var(--line); }
+    .trips td { text-align: right; padding: 0.3rem 0.6rem 0.3rem 0; border-bottom: 1px solid var(--line); }
+    .trips tfoot td { font-weight: 600; color: var(--ink); border-bottom: none; }
+    .trips .bar-cell { width: 38%; padding-right: 0; }
+    .trips th.bar-cell { text-align: center; }
+    .trips tr.wrong-way td { color: var(--c-rate); }
+    .pull-bar { position: relative; height: 0.7rem; }
+    .pull-bar::before { content: ""; position: absolute; left: 50%; top: -0.3rem; bottom: -0.3rem; border-left: 1px solid var(--line-strong); }
+    .pull-bar span { position: absolute; top: 0; bottom: 0; background: var(--c-loss); border-radius: 2px; }
+    .scoreboard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.5rem; font: 0.9375rem var(--sans); color: var(--ink-muted); margin-bottom: 1rem; }
+    .scoreboard .big { font: 600 1.6rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+    .scoreboard .big.param { text-decoration: underline 3px var(--c-param); text-underline-offset: 0.2em; }
+    .scoreboard .big.loss { text-decoration: underline 3px var(--c-loss); text-underline-offset: 0.2em; }
+    .scoreboard .big.rate { text-decoration: underline 3px var(--c-rate); text-underline-offset: 0.2em; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .pill[aria-pressed="true"] { border-color: var(--ink); border-width: 2px; }
+    .log { font: 0.875rem/1.5 var(--sans); color: var(--ink-muted); min-height: 3em; margin: 0.5rem 0 0; }
+    .log strong { color: var(--ink); }
+    .trace-path { fill: none; stroke: var(--c-param); stroke-width: 2; stroke-linejoin: round; }
+    .trace-path.faint { stroke-opacity: 0.35; stroke-width: 1.25; }
+    .trace-dot { fill: var(--c-param); }
+    .step-arrow { stroke: var(--c-rate); stroke-width: 2; }
+    .start-dot { fill: var(--surface-raised); stroke: var(--c-param); stroke-width: 2; cursor: pointer; }
+    .start-dot.active { fill: var(--c-param); }
+    .end-dot { fill: var(--c-param); fill-opacity: 0.35; }
+    .end-dot.active { fill-opacity: 1; }
+    #fig-hand[hidden], #fig-all[hidden], #hand-log[hidden] { display: none; }
+    #hand-log { margin-top: 1rem; }
+    @media (max-width: 560px) { .trips .wide { display: none; } }
+  </style>
+  <script src="explorable.js"></script>
+  <script src="slope.js" defer></script>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="index.html">← Explorables</a>
+    <button id="theme" type="button">Dark</button>
+  </nav>
+
+  <main>
+    <header>
+      <p class="kicker">Learning from examples</p>
+      <h1>350 billion tries, or one</h1>
+      <p class="dek">The loss can say more than how wrong a guess is. Read the right way, it says which way to move, and roughly how far.</p>
+    </header>
+
+    <p>The program on the <a href="learn-a-number.html">previous page</a> learned km per mile by trying each nudge both ways: score the guess a little higher, score it a little lower, keep the better one. That costs two scorings for its one weight on every step, and a scoring means running the model on every example.</p>
+    <p>GPT-3 has 175 billion weights (<a href="https://arxiv.org/abs/2005.14165">Brown et al., 2020</a>). Trying each one both ways would take 350 billion runs of the whole model for a single step of training, and training takes many thousands of steps. Real training does each step for about the cost of three runs: one to score the examples, and about two more to work out which way every weight should move (<a href="https://arxiv.org/abs/2001.08361">Kaplan et al., 2020</a>, §2.1).</p>
+    <p>Those two extra runs compute the loss's <span class="v loss">slope</span> at the current guess: how much the loss changes for each unit the guess moves. A negative slope means the loss falls as the guess rises, so the guess should go up; a positive slope means it should come down. Across many weights, the list of slopes is called the <em>gradient</em>, an old word for how steeply a road or railway climbs, from a Latin root meaning a step (<a href="https://www.etymonline.com/word/gradient">Etymonline</a>).</p>
+    <p>This page works it out for the one weight from the previous page, <em>km = <span class="v param">w</span> × miles</em>, on the same seven trips, and then lets the slope steer.</p>
+
+    <h2>Measure it first</h2>
+    <p>The plainest way to find a slope is to measure it. Move the guess a little, see how much the loss changes, and divide by how far you moved. Start from the guess <span class="v param">w</span> = 1, where the loss is 175.867.</p>
+
+    <figure id="fig-measure">
+      <div class="controls">
+        <span>move the guess by</span>
+        <span class="buttons" role="group" aria-label="size of the move">
+          <button type="button" class="pill" data-nudge="0.1">0.1</button>
+          <button type="button" class="pill" data-nudge="0.01">0.01</button>
+          <button type="button" class="pill" data-nudge="0.001">0.001</button>
+        </span>
+      </div>
+      <table class="trips">
+        <tbody>
+          <tr><td style="text-align: left">loss at <span class="v param">w</span> = 1</td><td id="measure-before"></td></tr>
+          <tr><td style="text-align: left">loss at <span class="v param">w</span> = <span id="measure-nudged"></span></td><td id="measure-after"></td></tr>
+          <tr><td style="text-align: left">change in loss</td><td id="measure-change"></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td style="text-align: left">change ÷ <span id="measure-h"></span></td><td id="measure-ratio"></td></tr>
+        </tfoot>
+      </table>
+      <figcaption><strong>Pick smaller and smaller moves.</strong> Each row is one scoring of the seven trips; the last line is the measured slope.</figcaption>
+    </figure>
+
+    <p>A move of 0.1 gives −530. A move of 0.01 gives −573, and 0.001 gives −577. The answers stop changing as the move shrinks, settling near −577.5. That settling is what makes the slope a single number at a single guess. It happens because the loss is built from multiplying and squaring, which bend smoothly: look closely enough and any smooth curve looks straight, and a straight line has one steepness.</p>
+    <p>Measuring still costs a scoring per weight, though. The useful part is that nobody has to measure.</p>
+
+    <h2>Each trip pulls</h2>
+    <p>Follow one trip through a tiny move. If the guess rises by a sliver, the trip's prediction, <span class="v param">w</span> × miles, rises by miles times that sliver, and so does its miss. A miss of −10 that grows by 0.01 becomes −9.99, and its square drops from 100 to 99.8001: a change of about 2 × miss × 0.01. Squares always change that way under small moves, because the sliver squared is too small to count.</p>
+    <p>Put together, each trip changes the loss by about 2 × miles × miss for every unit the guess moves. Call that the trip's <span class="v loss">pull</span>. The loss is an average over trips, so its slope is the average pull:</p>
+    <p class="equation"><span class="v loss">slope</span> = average of 2 × miles × (<span class="v param">w</span> × miles − km)</p>
+    <p>That reads: a trip pulls hard when it misses by a lot, and harder still when it is long, because on a long trip every bit of the guess is multiplied by many miles.</p>
+
+    <figure id="fig-pull">
+      <table class="trips">
+        <thead><tr><th>miles</th><th>miss at <span class="v param">w</span> = 1</th><th>pull</th><th class="bar-cell">pull, drawn</th></tr></thead>
+        <tbody id="pull-rows"></tbody>
+        <tfoot><tr><td></td><td>average pull</td><td id="pull-total"></td><td></td></tr></tfoot>
+      </table>
+      <figcaption><strong>The slope, built from one scoring.</strong> Every trip falls short at <span class="v param">w</span> = 1, so every pull is negative and the loss falls as the guess rises. The 46-mile trip does most of the pulling.</figcaption>
+    </figure>
+
+    <p>The average pull is −577.5, the number the measurements were closing in on, and it took no extra scoring. The misses were already in hand from scoring the guess once; the pulls are one multiplication each. A real model with billions of weights does the same bookkeeping backwards through its layers, giving every weight its slope from the same single scoring. That procedure is called <em>backpropagation</em>, after the paper that made it widely known (<a href="https://www.nature.com/articles/323533a0">Rumelhart, Hinton and Williams, 1986</a>); it is where the two extra runs go.</p>
+
+    <h2>Step against the slope</h2>
+    <p>The slope says which way: against its sign. It also suggests how far. A simple rule, and the one real training starts from, is to step a fixed fraction of the slope:</p>
+    <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − 0.0005 × <span class="v loss">slope</span></p>
+    <p>That reads: move against the slope, by 0.0005 of it. At <span class="v param">w</span> = 1 the slope is −577.5, so the first step is +0.289, up toward the answer. The 0.0005 is a fixed number picked to suit these trips; how to pick it is the subject of the next page.</p>
+
+    <x-predict id="predict-steps">
+      <p class="predict-label">Predict first</p>
+      <p>Every step is 0.0005 times the slope, wherever the guess happens to be. The first one moves the guess from 1 to about 1.29. What happens as the guess nears 1.609?</p>
+      <div class="answers">
+        <button type="button" data-answer="overshoot">It overshoots and swings back and forth</button>
+        <button type="button" data-answer="shrink" data-correct>The steps shrink and the guess eases in</button>
+        <button type="button" data-answer="stuck">It gets stuck short of the answer, like the nudges did</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">The steps shrink by themselves.</p>
+        <p>Take the steps below and watch the step size column. Nothing in the rule says to slow down near the answer, and it slows down anyway.</p>
+      </div>
+    </x-predict>
+
+    <figure id="fig-hand" hidden>
+      <div class="scoreboard">
+        <span>guess <span class="big param" id="hand-guess"></span></span>
+        <span>loss <span class="big loss" id="hand-loss"></span></span>
+        <span>slope <span class="big loss" id="hand-slope"></span></span>
+      </div>
+      <div class="controls" style="margin-bottom: 0">
+        <span class="buttons">
+          <button type="button" class="pill" id="step-down"></button>
+          <button type="button" class="pill" id="step-up"></button>
+        </span>
+        <button type="button" class="pill" id="hand-reset">Back to 1</button>
+      </div>
+      <table class="trips" id="hand-log">
+        <thead><tr><th>step</th><th class="wide">from</th><th>slope</th><th>step size</th><th>to</th><th>loss went</th></tr></thead>
+        <tbody id="hand-rows"></tbody>
+      </table>
+      <figcaption><strong>You choose the direction; the slope sets the size.</strong> You see what the program sees: the current guess, its loss and its slope. No chart shows the loss of guesses you have not tried. Step the wrong way and the loss rises, and the next step is bigger.</figcaption>
+    </figure>
+
+    <p>From 1, the steps going up are 0.289, 0.152, 0.080, 0.042: each a bit over half the one before, and each covering about 47% of the distance still left. After nine steps the guess is 1.607; the size of a step tells you how far there is to go.</p>
+    <p>The reason is in the pulls. Every pull is 2 × miles × miss, and every miss shrinks in step with the guess's distance from the answer, so the slope does too. For these trips the slope is about 948 times the distance, with the sign pointing back toward 1.609: −577.5 at 1, where the guess is 0.609 short, and −103 at 1.5, where it is 0.109 short. The loss of a single weight scored by squared misses always behaves this way. Plotted against the guess it would make a parabola, a symmetric bowl, though neither you nor the program ever sees it. So a step of 0.0005 × slope is a step of 0.474 × distance: big when far, small when near, and never planned.</p>
+
+    <h2>Let the program step</h2>
+    <p>The program follows the rule without being asked which way: it computes the slope, steps against it, and stops when a step would be smaller than 0.0001.</p>
+
+    <figure id="fig-run">
+      <div class="controls">
+        <span>start at <span class="v param">w</span> = <x-scrub bind="start" min="0.2" max="4" step="0.1" digits="1" color="param"></x-scrub></span>
+      </div>
+      <svg id="run" viewBox="0 0 460 300" role="img" aria-label="The guess at each step of the program's run, with the step it took"></svg>
+      <x-player bind="k" max="20" label="step"></x-player>
+      <p class="log" id="run-log"></p>
+      <figcaption><strong>Time runs down the chart.</strong> Each row is one step: the blue dot is the guess, the orange line the step it took. Press Play, or drag the start.</figcaption>
+    </figure>
+
+    <p>From a start of <x-show bind="start" digits="1" color="param"></x-show> the program reaches <x-show bind="runEnd" digits="4" color="param"></x-show> in <x-show bind="runSteps" digits="0"></x-show> steps, and it computed one slope per step instead of trying two guesses. Starting above the answer works the same way in mirror image: every trip overshoots, every pull is positive, and the steps go down.</p>
+
+    <h2>Every start at once</h2>
+    <p>Now run the program from twenty starts, 0.2 to 4.0, and compare how long each takes.</p>
+
+    <x-predict id="predict-starts">
+      <p class="predict-label">Predict again</p>
+      <p>A start of 4.0 is about four times as far from 1.609 as a start of 1. From 1 the program takes <x-show bind="stepsFromOne" digits="0"></x-show> steps. How many does it take from 4.0?</p>
+      <div class="answers">
+        <button type="button" data-answer="four">About four times as many</button>
+        <button type="button" data-answer="couple" data-correct>Only a couple more</button>
+        <button type="button" data-answer="fewer">Fewer, because the slope is steeper</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">Only a couple more.</p>
+        <p>From 4.0 it takes <x-show bind="stepsFromFour" digits="0"></x-show> steps. Each step removes about 47% of whatever distance is left, so four times the distance costs only the two steps it takes to shrink it fourfold. The far starts take giant first steps: from 4.0 the first one is 1.13.</p>
+      </div>
+    </x-predict>
+
+    <figure id="fig-all" hidden>
+      <svg id="all" viewBox="0 0 460 300" role="img" aria-label="Twenty runs of the program from different starting guesses"></svg>
+      <p class="log" id="all-log"></p>
+      <figcaption><strong>Point at a start</strong> along the top to pick its run out of the bundle; click to replay that single run in the figure above.</figcaption>
+    </figure>
+
+    <aside class="limits">
+      <p><strong>Where this stops matching real training.</strong> A model with many weights and layers does not have a perfect bowl for a loss, so the slope is proportional to the distance only close to the bottom; far away, a steep slope does not always mean a long way to go. The fixed 0.0005 was picked for these trips. Longer trips make the slope steeper, and the same fraction would overshoot, which is where the next page begins. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>
+    </aside>
+
+    <h2>Try it without the page</h2>
+    <details class="check">
+      <summary>Two trips: 2 miles logged as 3.2 km, and 4 miles as 6.4 km. With the guess w = 1.5 and squared misses, what is the slope? Take one step of 0.01 × slope: where does the guess land?</summary>
+      <p>The predictions are 3.0 and 6.0 km, so the misses are −0.2 and −0.4. The pulls are 2 × 2 × −0.2 = −0.8 and 2 × 4 × −0.4 = −3.2, and their average, the slope, is −2.0. The step is −0.01 × −2.0 = +0.02, so the guess lands at 1.52. The answer here is 1.6: the step closed 0.02 of the 0.1 gap, and the next step, with a smaller slope, will close a bit less.</p>
+    </details>
+  </main>
+</body>
+</html>
