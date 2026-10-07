@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning a number from examples · Explorables</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    .trips { width: 100%; border-collapse: collapse; font: 0.875rem var(--sans); font-variant-numeric: tabular-nums; }
+    .trips th { font-weight: 600; color: var(--ink-muted); text-align: right; padding: 0 0.6rem 0.4rem 0; border-bottom: 1px solid var(--line); }
+    .trips td { text-align: right; padding: 0.3rem 0.6rem 0.3rem 0; border-bottom: 1px solid var(--line); }
+    .trips .bar-cell { width: 38%; padding-right: 0; }
+    .trips th.bar-cell { text-align: center; }
+    .miss-bar { position: relative; height: 0.7rem; }
+    .miss-bar::before { content: ""; position: absolute; left: 50%; top: -0.3rem; bottom: -0.3rem; border-left: 1px solid var(--line-strong); }
+    .miss-bar span { position: absolute; top: 0; bottom: 0; background: var(--c-loss); border-radius: 2px; }
+    .trips.opener { width: auto; margin: 1.25rem auto; font-size: 1rem; }
+    .trips.opener td, .trips.opener th { padding-left: 1.5rem; }
+    .scoreboard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.5rem; font: 0.9375rem var(--sans); color: var(--ink-muted); margin-bottom: 1rem; }
+    .scoreboard .big { font: 600 1.6rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+    .scoreboard .big.param { text-decoration: underline 3px var(--c-param); text-underline-offset: 0.2em; }
+    .scoreboard .big.loss { text-decoration: underline 3px var(--c-loss); text-underline-offset: 0.2em; }
+    .scoreboard [hidden] { display: none; }
+    .nudges { display: flex; gap: 0.5rem; }
+    .pill[aria-pressed="true"] { border-color: var(--ink); border-width: 2px; }
+    .toggle { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .toggle input { accent-color: var(--ink); }
+    .log { font: 0.875rem/1.5 var(--sans); color: var(--ink-muted); min-height: 3em; margin: 0.5rem 0 0; }
+    .log strong { color: var(--ink); }
+    .trace-path { fill: none; stroke: var(--c-param); stroke-width: 2; stroke-linejoin: round; }
+    .trace-path.other { stroke: var(--ink-faint); stroke-dasharray: 4 4; stroke-width: 1.5; }
+    .trace-path.faint { stroke-opacity: 0.35; stroke-width: 1.25; }
+    .trace-dot { fill: var(--c-param); }
+    .tried-mark { fill: none; stroke: var(--c-rate); stroke-width: 2; }
+    .start-dot { fill: var(--surface-raised); stroke: var(--c-param); stroke-width: 2; cursor: pointer; }
+    .start-dot.active { fill: var(--c-param); }
+    #fig-all[hidden] { display: none; }
+    @media (max-width: 560px) { .trips .wide { display: none; } }
+  </style>
+  <script src="explorable.js"></script>
+  <script src="learn-a-number.js" defer></script>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="index.html">← Explorables</a>
+    <button id="theme" type="button">Dark</button>
+  </nav>
+
+  <main>
+    <header>
+      <p class="kicker">Learning from examples</p>
+      <h1>A number nobody wrote down</h1>
+      <p class="dek">A program can find a number it was never told, without ever working out the rule behind it. All it needs is examples and a way to score its own guesses.</p>
+    </header>
+
+    <p>Here are three trips in one car. The odometer counts miles; the phone on the dashboard logs kilometres.</p>
+    <table class="trips opener">
+      <thead><tr><th>miles</th><th>km</th></tr></thead>
+      <tbody>
+        <tr><td>3.2</td><td>5.1</td></tr>
+        <tr><td>5.0</td><td>8.0</td></tr>
+        <tr><td>7.4</td><td>11.9</td></tr>
+      </tbody>
+    </table>
+    <p>How many kilometres are in a mile? You probably divided: 5.1 ÷ 3.2 is about 1.59, 8.0 ÷ 5.0 is 1.60, 11.9 ÷ 7.4 is about 1.61. Somewhere near 1.6, and if you knew it already, 1.609. Either way, you found a rule and then used it.</p>
+    <p>Now write the rule for whether a photo shows a cat, or for which word comes next in a sentence. There is nothing to divide. What exists instead is a pile of examples: photos people have labelled, sentences and the words that actually followed them. Most problems worth a program look like that, with plenty of examples and no rule anyone can write down.</p>
+    <p>So a program that learns does something blunter than you did. It holds a <em>guess</em>, predicts every example with it, and measures how far each prediction lands from the truth. That gap is the <span class="v loss">miss</span>. It boils all the misses down to a single number, the <span class="v loss">loss</span>, then nudges the guess and keeps the nudge if the loss went down. It never divides anything.</p>
+    <p>The trips are a toy, chosen because you can check the answer. The guess is the one number in the model <em>km = <span class="v param">w</span> × miles</em>, and a number in that position is called a <span class="v param">weight</span>. A language model has billions of them, and each one was found by this same loop of guessing, scoring and nudging.</p>
+
+    <h2>Nudge it yourself</h2>
+    <p>Here are seven logged trips, and a first guess of <span class="v param">w</span> = 1, which says a mile is a kilometre. Each row multiplies the trip's miles by the guess and compares the result with what the phone logged. To score the whole guess, square each miss and take the average. The squaring gets its own section below; for now, just note that a lower loss is a better guess.</p>
+    <p class="equation"><span class="v loss">loss</span> = average of (<span class="v param">w</span> × miles − km)²</p>
+    <p>That reads: for each trip, take how far the guess's prediction landed from the logged km, square it, and average over the trips. A perfect guess would score 0.</p>
+
+    <figure id="fig-hand">
+      <div class="scoreboard">
+        <div class="nudges">
+          <button type="button" class="pill" id="nudge-down">Nudge down 0.05</button>
+          <button type="button" class="pill" id="nudge-up">Nudge up 0.05</button>
+        </div>
+        <span>guess <span class="big param" id="hand-guess"></span></span>
+        <span id="hand-score">loss <span class="big loss" id="hand-loss"></span> <span id="hand-verdict"></span></span>
+      </div>
+      <table class="trips">
+        <thead><tr><th>miles</th><th>logged km</th><th class="wide">guess × miles</th><th>miss</th><th class="bar-cell">miss, drawn</th></tr></thead>
+        <tbody id="hand-rows"></tbody>
+      </table>
+      <div class="controls" style="margin-top: 0.85rem; margin-bottom: 0">
+        <label class="toggle"><input type="checkbox" id="hide-loss"> Hide the loss</label>
+        <button type="button" class="pill" id="hand-reset">Back to 1.00</button>
+      </div>
+      <figcaption><strong>Press the nudge buttons.</strong> The green bars are the misses: left of the centre line the guess fell short, right of it the guess overshot. You see what the program sees: the examples, its predictions, and one score. No chart shows the loss of guesses you have not tried.</figcaption>
+    </figure>
+
+    <p>From 1.00 it takes a dozen nudges up, every one scored better than the last, to reach 1.60. There both nudges score worse: 1.55 and 1.65 each lose to 1.60. With nudges of 0.05, the guess is stuck.</p>
+    <p>Tick <em>Hide the loss</em> and walk back from 1.00 to 1.60. Far from the answer it hardly matters: every bar shrinks together, and you can see the guess improving. Near 1.60 it does matter. A nudge shrinks some bars and lengthens others, and you are left asking whether three smaller misses beat two bigger ones. The examples can't answer that by themselves. Without one number that ranks every guess, there is no such thing as a better guess, and nothing to move toward. The loss is that number.</p>
+
+    <h2>The loss is a choice</h2>
+    <p>Nothing about the trips says the score has to square its misses. The obvious first try is simpler: add the misses up and call a lower total better. It fails at once. At <span class="v param">w</span> = 1 every prediction falls short, so the misses are all negative and the total is −71.1. A guess of 0 predicts zero kilometres for every trip and totals −188.1, which by this score is better, and −10 is better still. Falling short scores well, and the program would happily guess its way to minus infinity.</p>
+    <p>The fix is to count a miss by its size, whichever side it falls on. There are two common ways. One averages the <em>size of the misses</em>, ignoring their signs. The other averages the <em>squared misses</em>, and squaring removes the sign too. Squaring is the old choice: Legendre published it in 1805 as the <em>method of least squares</em>, to fit the orbits of comets (<a href="https://mathshistory.st-andrews.ac.uk/Miller/mathword/m/">Miller, Earliest Uses: least squares</a>). The word <em>loss</em> is younger. It comes from statistical decision theory, where Abraham Wald in 1939 wrote of the loss a wrong decision costs you, and by 1949 others were calling the scoring rule the <em>loss function</em> (<a href="https://mathshistory.st-andrews.ac.uk/Miller/mathword/l/">Miller, Earliest Uses: loss function</a>).</p>
+    <p>On clean trips the two losses agree. They disagree about one thing, and it is the thing a log of real trips will eventually contain.</p>
+
+    <x-predict id="predict-typo">
+      <p class="predict-label">Predict first</p>
+      <p>Someone logs a 13-mile trip as 31 miles; the phone still says 20.9 km. Add that trip to the seven and let the program learn with each loss. Which answer ends further from 1.609?</p>
+      <div class="answers">
+        <button type="button" data-answer="squared" data-correct>Squared misses</button>
+        <button type="button" data-answer="size">Size of the misses</button>
+        <button type="button" data-answer="same">Both move the same amount</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">Squaring gets dragged away.</p>
+        <p>The figure below now includes the bad trip. Squared misses settle at <x-show bind="typoSquaredEnd" digits="3" color="param"></x-show>; size of the misses settles at <x-show bind="typoSizeEnd" digits="3" color="param"></x-show>. The bad trip misses by about 29 km near the true answer. Squared, that is about 840, far more than the seven honest trips' squared misses put together, so the cheapest way to lower the loss is to give up on the seven and shrink that one. Counted by size, it is one miss among eight and can't outvote the rest.</p>
+        <p>Neither loss is the correct one. Squaring buys a smooth score that punishes one big error more than several small ones; sizes let a lone outlier be outvoted. Whoever builds the program decides which mistakes matter, and the program finds the best guess <em>by that score</em>.</p>
+      </div>
+    </x-predict>
+
+    <h2>Let the program nudge</h2>
+    <p>The program runs the loop you ran by hand, one round per step: try the guess nudged up and nudged down, and move to whichever scores lower. If neither scores lower, the guess was stuck, as yours was at 1.60, so the program halves the nudge and tries again. It stops when the nudge drops below 0.001.</p>
+
+    <figure id="fig-run">
+      <div class="controls">
+        <span>start at <span class="v param">w</span> = <x-scrub bind="start" min="0.2" max="4" step="0.1" digits="1" color="param"></x-scrub></span>
+        <span class="nudges" role="group" aria-label="loss">
+          <button type="button" class="pill" data-loss="squared">squared misses</button>
+          <button type="button" class="pill" data-loss="size">size of misses</button>
+        </span>
+        <label class="toggle"><input type="checkbox" id="typo"> include the 31-mile typo</label>
+      </div>
+      <svg id="run" viewBox="0 0 460 300" role="img" aria-label="The guess at each step of the program's run, with the nudges it tried"></svg>
+      <x-player bind="k" max="24" label="step"></x-player>
+      <p class="log" id="run-log"></p>
+      <figcaption><strong>Time runs down the chart.</strong> Each row is one step: the blue dot is the guess, the orange rings are the two nudged guesses the program scored. The dashed grey path is the same run under the other loss. Press Play, or drag the start.</figcaption>
+    </figure>
+
+    <p>From a start of <x-show bind="start" digits="1" color="param"></x-show> the program reaches <x-show bind="runEnd" digits="3" color="param"></x-show> in <x-show bind="runSteps" digits="0"></x-show> steps. Each step it learns nothing but two scores, and still it ends on the number you got by dividing. Notice when the nudge halves: only once the guess is close, because that is when both directions start to lose.</p>
+
+    <h2>Every start at once</h2>
+    <p>One run depends on where it starts. Step up a level and run the program from twenty starting guesses, from 0.2 to 4.0, with the same loss and the same trips.</p>
+
+    <x-predict id="predict-starts">
+      <p class="predict-label">Predict again</p>
+      <p>A start at 4.0 claims a mile is four kilometres; a start at 0.2 claims it is a fifth of one. Where do the twenty runs end?</p>
+      <div class="answers">
+        <button type="button" data-answer="spread">Spread out, each near where it started</button>
+        <button type="button" data-answer="same" data-correct>All at the same number</button>
+        <button type="button" data-answer="far">The far starts give up before arriving</button>
+      </div>
+      <div data-reveal>
+        <p class="verdict">They all end together.</p>
+        <p>Every run ends at <x-show bind="allEnd" digits="3" color="param"></x-show>. The starting guess changes the route and how many steps it takes; it doesn't change the destination. The destination is set by the examples and the loss. Switch the loss or add the typo above, and all twenty move together.</p>
+      </div>
+    </x-predict>
+
+    <figure id="fig-all" hidden>
+      <svg id="all" viewBox="0 0 460 300" role="img" aria-label="Twenty runs of the program from different starting guesses"></svg>
+      <figcaption><strong>Point at a start</strong> along the top to pick its run out of the bundle; click to replay that single run in the figure above. The loss and the trips are the ones chosen above.</figcaption>
+    </figure>
+
+    <aside class="limits">
+      <p><strong>Where this stops matching real training.</strong> Trying each nudge both ways costs two scorings per weight per step. That is fine for one weight and hopeless for billions; the next page shows how one calculation gives every weight its direction at once. Real losses are also not always this kind: with many weights, different starts can end in different places. And real models score on fresh batches of examples, not the same seven trips each time.</p>
+    </aside>
+
+    <h2>Try it without the page</h2>
+    <details class="check">
+      <summary>Three trips: 2 miles logged as 3.3 km, 4 miles as 6.4 km, 10 miles as 16.0 km. With the guess w = 1.5 and squared misses, what is the loss, and which way should the guess be nudged?</summary>
+      <p>The predictions are 3.0, 6.0 and 15.0 km, so the misses are −0.3, −0.4 and −1.0. Squared, they are 0.09, 0.16 and 1.00, and their average, the loss, is about 0.42. Every miss is short, so nudge up. At w = 1.6 the misses become −0.1, 0 and 0, and the loss drops to about 0.003.</p>
+    </details>
+  </main>
+</body>
+</html>

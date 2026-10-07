@@ -11,7 +11,7 @@ The outline, in reading order. Each page's prerequisites come before it. Pages
 not yet built are marked *planned*; `gradient-descent.html` is a first draft of
 pages 3 and 4 and will be split and reworked to match.
 
-1. **Learning a number from examples** (*planned*)
+1. **Learning a number from examples** (`learn-a-number.html`)
    - Idea: a program can find a number it was never told by guessing, scoring
      how wrong the guess is on known examples, and nudging it. Toy: learn km per
      mile (1.609) from logged trips; it stands in for every weight in a model.
