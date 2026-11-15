@@ -88,7 +88,7 @@
 
     <h2>Each trip pulls</h2>
     <p>Follow one trip through a tiny move. If the guess rises by a sliver, the trip's prediction, <span class="v param">w</span> × miles, rises by miles times that sliver, and so does its miss. A miss of −10 that grows by 0.01 becomes −9.99, and its square drops from 100 to 99.8001: a change of about 2 × miss × 0.01. Squares always change that way under small moves, because the sliver squared is too small to count.</p>
-    <p>Put together, each trip changes the loss by about 2 × miles × miss for every unit the guess moves. Call that the trip's <span class="v loss">pull</span>. The loss is an average over trips, so its slope is the average pull:</p>
+    <p>Put together, each trip's squared miss changes by about 2 × miles × miss for every unit the guess moves. Call that the trip's <span class="v loss">pull</span>. The loss is an average over trips, so its slope is the average pull:</p>
     <p class="equation"><span class="v loss">slope</span> = average of 2 × miles × (<span class="v param">w</span> × miles − km)</p>
     <p>That reads: a trip pulls hard when it misses by a lot, and harder still when it is long, because on a long trip every bit of the guess is multiplied by many miles.</p>
 
@@ -106,7 +106,7 @@
     <h2>Step against the slope</h2>
     <p>The slope says which way: against its sign. It also suggests how far. A simple rule, and the one real training starts from, is to step a fixed fraction of the slope:</p>
     <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − 0.0005 × <span class="v loss">slope</span></p>
-    <p>That reads: move against the slope, by 0.0005 of it. At <span class="v param">w</span> = 1 the slope is −577.5, so the first step is +0.289, up toward the answer. The 0.0005 is a fixed number picked to suit these trips; how to pick it is the subject of the next page.</p>
+    <p>That reads: move against the slope, by 0.0005 of it. At <span class="v param">w</span> = 1 the slope is −577.5, so the first step is +0.289, up toward the answer. The 0.0005 is a fixed number picked to suit these trips; how to pick it is the subject of the <a href="learning-rate.html">next page</a>.</p>
 
     <x-predict id="predict-steps">
       <p class="predict-label">Predict first</p>
@@ -184,7 +184,7 @@
     </figure>
 
     <aside class="limits">
-      <p><strong>Where this stops matching real training.</strong> A model with many weights and layers does not have a perfect bowl for a loss, so the slope is proportional to the distance only close to the bottom; far away, a steep slope does not always mean a long way to go. The fixed 0.0005 was picked for these trips. Longer trips make the slope steeper, and the same fraction would overshoot, which is where the next page begins. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>
+      <p><strong>Where this stops matching real training.</strong> A model with many weights and layers does not have a perfect bowl for a loss, so the slope is proportional to the distance only close to the bottom; far away, a steep slope does not always mean a long way to go. The fixed 0.0005 was picked for these trips. Longer trips make the slope steeper, and the same fraction would overshoot, which is where the <a href="learning-rate.html">next page</a> begins. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>
     </aside>
 
     <h2>Try it without the page</h2>
