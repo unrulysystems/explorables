@@ -14,16 +14,16 @@
     .scoreboard .big { font: 600 1.6rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
     .scoreboard .big.param { text-decoration: underline 3px var(--c-param); text-underline-offset: 0.2em; }
     .scoreboard .big.loss { text-decoration: underline 3px var(--c-loss); text-underline-offset: 0.2em; }
-    .toggle { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-    .toggle input { accent-color: var(--ink); }
+    .scoreboard .big.slope { text-decoration: underline 3px var(--c-slope); text-underline-offset: 0.2em; }
     .log { font: 0.875rem/1.5 var(--sans); color: var(--ink-muted); min-height: 3em; margin: 0.5rem 0 0; }
     .log strong { color: var(--ink); }
     .trace-dot { fill: var(--c-param); }
     .step-arrow { stroke: var(--c-rate); stroke-width: 2; }
-    .end-dot { fill: var(--c-param); fill-opacity: 0.45; }
-    .end-dot.active { fill-opacity: 1; }
-    #sweep { cursor: pointer; }
-    #hand-log[hidden] { display: none; }
+    .sweep-dot { fill: var(--c-param); }
+    .sweep-dot.picked { stroke: var(--ink); stroke-width: 2; }
+    .unsettled-band { fill: var(--surface-sunken); stroke: var(--line-strong); }
+    #sweep, #sweep-long { cursor: pointer; }
+    #hand-log[hidden], #fig-growing[hidden], #fig-long[hidden] { display: none; }
     #hand-log { margin-top: 1rem; }
     @media (max-width: 560px) { .trips .wide { display: none; } }
   </style>
@@ -56,7 +56,7 @@
 
     <p>The guess passes 1.609 on the first step and lands further away every time after. By the fifth step the program claims a mile is 35 kilometres, and the loss has grown from about 1,200 to 3.6 million. Nothing in the rule changed, and the new trip is not a mistake.</p>
     <p>The 0.0005 has a name. It is the <span class="v rate">learning rate</span>, usually written <span class="v rate">η</span>, the Greek letter eta, and every step is the learning rate times the slope:</p>
-    <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − <span class="v rate">η</span> × <span class="v loss">slope</span></p>
+    <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − <span class="v rate">η</span> × <span class="v slope">slope</span></p>
     <p>That reads: move against the slope, by <span class="v rate">η</span> of it. The name suggests a dial for how fast the program learns, and up to a point it is one. A run <em>settles</em> when its steps shrink toward nothing, as they did on the previous page, and <em>blows up</em> when they grow, as they do in the table. This page finds the rate where one turns into the other, and shows why one more trip moved it.</p>
 
     <h2>Turn the dial yourself</h2>
@@ -66,10 +66,10 @@
       <div class="scoreboard">
         <span>guess <span class="big param" id="hand-guess"></span></span>
         <span>loss <span class="big loss" id="hand-loss"></span></span>
-        <span>slope <span class="big loss" id="hand-slope"></span></span>
+        <span>slope <span class="big slope" id="hand-slope"></span></span>
       </div>
       <div class="controls" style="margin-bottom: 0">
-        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub></span>
+        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="rate" label="learning rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub></span>
         <button type="button" class="pill" id="hand-step"></button>
         <button type="button" class="pill" id="hand-reset">Back to 1</button>
       </div>
@@ -80,9 +80,9 @@
       <figcaption><strong>Drag the shaded number to set η</strong>, or click it and use the arrow keys, then take a step. The button shows the step the rule is about to take. Take a few at 0.0005, then try a smaller rate and a larger one.</figcaption>
     </figure>
 
-    <p>On the previous page each step covered about 47% of the distance to the answer. Here is where the 47% comes from. For these trips the slope is 948 times the guess's distance from 1.609, so a step of <span class="v rate">η</span> × slope is a step of 948 × <span class="v rate">η</span> × distance. What is left afterwards is:</p>
+    <p>On the previous page each step covered about 47% of the distance to the answer. Here is where the 47% comes from. For these trips the slope is 948 times the guess's distance from 1.609. Call that 948 the <em>steepness</em> of the loss: how much slope there is for each unit of distance from the answer. A step of <span class="v rate">η</span> × slope is then a step of 948 × <span class="v rate">η</span> × distance, and what is left afterwards is:</p>
     <p class="equation">distance after = (1 − 948 × <span class="v rate">η</span>) × distance before</p>
-    <p>That reads: every step multiplies the distance by the same number, whatever the guess is. Call it the <em>multiplier</em>. At <span class="v rate">η</span> = <x-scrub bind="rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub> the multiplier is <x-show bind="multiplierSeven"></x-show>. At 0.0005 it is 0.53: each step leaves 53% of the distance, which is the other 47% covered.</p>
+    <p>That reads: every step multiplies the distance by the same number, whatever the guess is. Call it the <em>multiplier</em>. The previous page's 0.0005 gives a multiplier of 0.53: each step leaves 53% of the distance, which is the other 47% covered. Drag the rate to see others: at <span class="v rate">η</span> = <x-scrub bind="rate" label="learning rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub> the multiplier is <x-show bind="multiplierSeven"></x-show>.</p>
     <p>A larger rate gives a smaller multiplier and a faster run. At 0.0010 the multiplier is 0.05, and a single step covers 95% of the distance. Just past that, at 1 ÷ 948, it is zero. Raise the rate further and the multiplier goes below zero.</p>
 
     <x-predict id="predict-swing">
@@ -101,14 +101,13 @@
 
     <figure id="fig-run">
       <div class="controls">
-        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub></span>
-        <span>multiplier <x-show bind="multiplierNow"></x-show></span>
-        <label class="toggle"><input type="checkbox" data-long-trip> include the 150-mile trip</label>
+        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="rate" label="learning rate" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub></span>
+        <span>multiplier <x-show bind="multiplierSeven"></x-show></span>
       </div>
       <svg id="run" viewBox="0 0 460 300" role="img" aria-label="The guess at each of twenty steps at the chosen learning rate, with the step it took"></svg>
       <x-player bind="k" max="20" label="step"></x-player>
       <p class="log" id="run-log"></p>
-      <figcaption><strong>Time runs down the chart.</strong> Each row is one step from a guess of 1: the blue dot is the guess, the orange line the step it took. Drag η, or press Play. A guess that leaves the chart is still reported in the line under it.</figcaption>
+      <figcaption><strong>Time runs down the chart.</strong> Each row is one step from a guess of 1: the blue dot is the guess, the orange line the step it took. Drag η, or press Play. A guess that leaves the chart is still reported in the line under it. The trips are the seven from the previous page.</figcaption>
     </figure>
 
     <h2>What the slope cannot see</h2>
@@ -125,28 +124,31 @@
       </div>
       <div data-reveal>
         <p class="verdict">Each swing grows.</p>
-        <p>The multiplier is 1 − 948 × 0.0022 = −1.09, so every step leaves the guess 9% further from the answer than it was, on the other side. The figure above is now playing that run. It starts 0.61 from the answer and after twenty steps is <x-show bind="distanceAfterRunAt0022" digits="2"></x-show> away, with a loss that rises at every step. One tenth more turned a program that learns into one that gets worse the longer it runs.</p>
+        <p>The multiplier is 1 − 948 × 0.0022 = −1.09, so every step leaves the guess 9% further from the answer than it was, on the other side. The figure below plays that run. It starts 0.61 from the answer and after twenty steps is <x-show bind="distanceAfterGrowingRun"></x-show> away, with a loss that rises at every step. One tenth more turned a program that learns into one that gets worse the longer it runs.</p>
       </div>
     </x-predict>
+
+    <figure id="fig-growing" hidden>
+      <svg id="run-growing" viewBox="0 0 460 300" role="img" aria-label="Twenty steps at a learning rate of 0.0022, each swing wider than the last"></svg>
+      <x-player bind="kGrowing" max="20" label="step"></x-player>
+      <p class="log" id="run-growing-log"></p>
+      <figcaption><strong>The run at η = 0.0022</strong> on the seven trips, from a guess of 1. Each orange step is a little longer than the one before it.</figcaption>
+    </figure>
 
     <h2>Every rate at once</h2>
     <p>One run tells you about one rate. Step up a level: run the program at every rate from 0.0001 to 0.0025, and count the steps each run takes to settle. Settling here means the previous page's stopping rule, a step smaller than 0.0001.</p>
 
     <figure id="fig-sweep">
-      <div class="controls">
-        <span>steepness <x-show bind="steepnessNow"></x-show></span>
-        <label class="toggle"><input type="checkbox" data-long-trip> include the 150-mile trip</label>
-      </div>
       <svg id="sweep" viewBox="0 0 460 300" role="img" aria-label="Steps to settle for each learning rate from 0.0001 to 0.0025"></svg>
       <p class="log" id="sweep-log"></p>
-      <figcaption><strong>Each dot is one run</strong> from a guess of 1, at the rate below it. Dots in the grey band had not settled after 200 steps. The orange line marks the current η. Point at a dot to read it; click to replay that single run in the figure above.</figcaption>
+      <figcaption><strong>Each dot is one run</strong> from a guess of 1, at the rate below it. Dots in the band along the top had not settled after 200 steps. The orange line marks the current η, and the line under the chart reads its dot. Point at another dot to read it; click to replay that single run in the figure above.</figcaption>
     </figure>
 
-    <p>With the seven trips, the dots make a valley with one gentle side and one cliff. From the left, raising the rate helps: <x-show bind="settleAt0001" digits="0"></x-show> steps at 0.0001, <x-show bind="settleAt0005" digits="0"></x-show> at 0.0005, <x-show bind="settleAt0010" digits="0"></x-show> at 0.0010. Past 1 ÷ 948 the multiplier is negative and the count climbs again, because the swings take longer to fade: <x-show bind="settleAt0015" digits="0"></x-show> steps at 0.0015, <x-show bind="settleAt0020" digits="0"></x-show> at 0.0020. At 0.0021 the multiplier is −0.99 and the run needs over a thousand steps. At 2 ÷ 948, about 0.00211, the multiplier reaches −1, and past it no number of steps is enough.</p>
+    <p>The dots make a valley with one gentle side and one cliff. From the left, raising the rate helps: <x-show bind="settleAt0001" digits="0"></x-show> steps at 0.0001, <x-show bind="settleAt0005" digits="0"></x-show> at 0.0005, <x-show bind="settleAt0010" digits="0"></x-show> at 0.0010. Past 1 ÷ 948 the multiplier is negative and the count climbs again, because the swings take longer to fade: <x-show bind="settleAt0015" digits="0"></x-show> steps at 0.0015, <x-show bind="settleAt0020" digits="0"></x-show> at 0.0020. At 0.0021 the multiplier is −0.99 and the run needs over a thousand steps. At 2 ÷ 948, about 0.00211, the multiplier reaches −1, and past it no number of steps is enough.</p>
     <p>The two sides are not alike. A rate that is too small costs time, and doubling it helps. A rate that is too large loses everything, and the fastest rate is exactly half of the first one that fails.</p>
 
     <h2>One trip moved the cliff</h2>
-    <p>The cliff sits at 2 ÷ 948, so everything depends on the 948. Call that number the <em>steepness</em> of the loss: how much slope there is for each unit of distance from the answer. It comes from the pulls on the previous page. A trip's pull is 2 × miles × miss, and its miss is its miles times the guess's distance from the answer, give or take the rounding in the log. So each trip contributes 2 × miles² for each unit of distance, and the steepness is twice the average of miles squared.</p>
+    <p>The cliff sits at 2 ÷ 948, so everything depends on the steepness. It comes from the pulls on the previous page. A trip's pull is 2 × miles × miss, and its miss is its miles times the guess's distance from the answer, give or take the rounding in the log. So each trip contributes 2 × miles² for each unit of distance, and the steepness is twice the average of miles squared.</p>
 
     <x-predict id="predict-cliff">
       <p class="predict-label">Predict once more</p>
@@ -158,10 +160,24 @@
       </div>
       <div data-reveal>
         <p class="verdict">The cliff is now at 0.00031.</p>
-        <p>Squared, 150 miles is 22,500, almost seven times the other seven trips' squares put together. The average of miles squared jumps from 474 to 3,227, the steepness from 948 to 6,455, and the cliff from 2 ÷ 948 to 2 ÷ 6,455. The figure above now includes the trip: only the three smallest rates still settle.</p>
-        <p>At 0.0005, which sat comfortably in the valley, the multiplier is now 1 − 6,455 × 0.0005 = −2.23. That is the table at the top of the page, and both figures above are now set to it. Nothing was wrong with the trip or with the rule. The ground became steeper under a step sized for gentler ground.</p>
+        <p>Squared, 150 miles is 22,500, almost seven times the other seven trips' squares put together. The average of miles squared jumps from 474 to 3,227, the steepness from 948 to 6,455, and the cliff from 2 ÷ 948 to 2 ÷ 6,455. The figure below shows every rate again with the trip in the log: only the three smallest still settle.</p>
+        <p>At 0.0005, which sat comfortably in the valley, the multiplier is now 1 − 6,455 × 0.0005 = −2.23. That is the table at the top of the page, and the run the figure below opens on. Nothing was wrong with the trip or with the rule. The ground became steeper under a step sized for gentler ground.</p>
       </div>
     </x-predict>
+
+    <figure id="fig-long" hidden>
+      <div class="controls">
+        <span>steepness 6,455</span>
+        <span>learning rate <span class="v rate">η</span> = <x-scrub bind="longRate" label="learning rate with the 150-mile trip" min="0.0001" max="0.0025" step="0.0001" digits="4" color="rate"></x-scrub></span>
+        <span>multiplier <x-show bind="multiplierLong"></x-show></span>
+      </div>
+      <svg id="sweep-long" viewBox="0 0 460 300" role="img" aria-label="Steps to settle for each learning rate with the 150-mile trip in the log"></svg>
+      <p class="log" id="sweep-long-log"></p>
+      <svg id="run-long" viewBox="0 0 460 300" role="img" aria-label="The guess at each of twenty steps with the 150-mile trip in the log"></svg>
+      <x-player bind="kLong" max="20" label="step"></x-player>
+      <p class="log" id="run-long-log"></p>
+      <figcaption><strong>Both views with the 150-mile trip in the log.</strong> Above, one dot per rate. Below, the single run at the rate the orange line marks, starting on the 0.0005 from the top of the page. Click a dot or drag η to see another run.</figcaption>
+    </figure>
 
     <aside class="limits">
       <p><strong>Where this stops matching real training.</strong> One weight scored by squared misses has the same steepness at every guess, so a rate that settles at the start settles all the way. A real model's loss is steeper in some places than in others, so the safe rate changes as the weights move. Real training usually changes the rate as it goes: the models in <a href="https://arxiv.org/abs/2001.08361">Kaplan et al., 2020</a> (§2.2) raised it over the first 3,000 steps and then lowered it toward zero. A real model also has many weights sharing one rate, each on ground of its own steepness, which is the next page. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>

@@ -2,10 +2,10 @@
 
    Meaning colors are the backbone: one quantity, one color, everywhere it
    appears (prose underline, control, mark). Pages use the --c-* roles, never
-   raw hex. The three hues are the first three slots of a validated
+   raw hex. The four hues are the first four slots of a validated
    categorical palette (CVD-safe as a set in both modes). In light mode the
-   orange and aqua sit under 3:1 against the surface, so every colored mark
-   also carries a text label. */
+   orange, aqua and yellow sit under 3:1 against the surface, so every colored
+   mark also carries a text label. */
 
 :root {
   color-scheme: light;
@@ -21,6 +21,7 @@
   --c-param: #2a78d6; /* parameters: w, (x, y), the ball and its path */
   --c-rate: #eb6834;  /* learning rate η and the steps it causes */
   --c-loss: #1baf7a;  /* loss: the curve's height, contours, loss charts */
+  --c-slope: #eda100; /* slope of the loss, and each example's pull on it */
 
   --serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -45,6 +46,7 @@
     --c-param: #3987e5;
     --c-rate: #d95926;
     --c-loss: #199e70;
+    --c-slope: #c98500;
   }
 }
 
@@ -61,6 +63,7 @@
   --c-param: #3987e5;
   --c-rate: #d95926;
   --c-loss: #199e70;
+  --c-slope: #c98500;
 }
 
 * { box-sizing: border-box; }
@@ -144,10 +147,11 @@ a { color: inherit; text-decoration-color: var(--line-strong); text-underline-of
   text-underline-offset: 0.2em;
   text-decoration-skip-ink: none;
 }
-.v:not(.param, .rate, .loss) { --c: var(--ink-faint); }
+.v:not(.param, .rate, .loss, .slope) { --c: var(--ink-faint); }
 .v.param, x-show[color="param"] { --c: var(--c-param); }
 .v.rate, x-show[color="rate"] { --c: var(--c-rate); }
 .v.loss, x-show[color="loss"] { --c: var(--c-loss); }
+.v.slope, x-show[color="slope"] { --c: var(--c-slope); }
 
 x-show {
   font: 600 0.92em var(--sans);
@@ -203,50 +207,20 @@ figcaption strong { color: var(--ink); font-weight: 600; }
   margin-bottom: 0.75rem;
 }
 
-.figure-row {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 1.25rem;
-  align-items: start;
-}
-@media (max-width: 720px) { .figure-row { grid-template-columns: 1fr; } }
-.panel-title { font: 600 0.8125rem var(--sans); color: var(--ink-muted); margin: 0 0 0.35rem; }
-
 /* SVG marks */
-.axis { stroke: var(--line-strong); }
-.grid line { stroke: var(--line); stroke-width: 1; }
+line.grid { stroke: var(--line); stroke-width: 1; }
 .tick { font: 11px var(--sans); fill: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .label { font: 12px var(--sans); fill: var(--ink-muted); }
 .label-strong { font: 600 12px var(--sans); fill: var(--ink); }
-.curve { fill: none; stroke: var(--c-loss); stroke-width: 2; }
-.hop { fill: none; stroke: var(--c-rate); stroke-width: 2; stroke-linecap: round; }
 .trail { fill: var(--c-param); }
 .ball { fill: var(--c-param); stroke: var(--surface-raised); stroke-width: 2.5; }
 .handle { fill: var(--surface-raised); stroke: var(--c-param); stroke-width: 2; cursor: grab; }
 .handle:active { cursor: grabbing; }
 .hit { fill: transparent; cursor: grab; }
 .threshold { stroke: var(--ink-faint); stroke-dasharray: 3 4; }
-.region { fill: color-mix(in oklab, var(--line) 55%, transparent); }
 .rate-rule { stroke: var(--c-rate); stroke-width: 2; }
-.crosshair { stroke: var(--ink-faint); stroke-width: 1; }
 .contour { fill: none; stroke: var(--c-loss); stroke-opacity: 0.45; stroke-width: 1.25; }
 .path2d { fill: none; stroke: var(--c-param); stroke-width: 2; stroke-linejoin: round; }
-
-.tooltip {
-  position: absolute;
-  pointer-events: none;
-  padding: 0.4rem 0.6rem;
-  font: 12px/1.4 var(--sans);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  background: var(--surface-raised);
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
-  white-space: nowrap;
-  transform: translate(-50%, calc(-100% - 12px));
-}
-.chart { position: relative; }
 
 x-player {
   display: flex;
@@ -302,11 +276,6 @@ x-predict.guessed-wrong .verdict::before { content: "Not quite, and that is the 
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-details.numbers { margin-top: 0.75rem; font: 0.8125rem var(--sans); color: var(--ink-muted); }
-details.numbers summary { cursor: pointer; }
-details.numbers table { border-collapse: collapse; margin-top: 0.5rem; font-variant-numeric: tabular-nums; }
-details.numbers td, details.numbers th { padding: 0.15rem 0.9rem 0.15rem 0; text-align: right; }
-
 .equation {
   font: 1.15rem var(--serif);
   text-align: center;
@@ -332,12 +301,3 @@ details.check summary { cursor: pointer; font: 600 0.9375rem var(--sans); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-
-ol.loop { padding-left: 1.4em; }
-ol.loop li { margin: 0.35rem 0; padding-left: 0.2em; }
-ol.loop li::marker { font: 600 0.9em var(--sans); color: var(--ink-faint); }
-.empty-hint { font: 13px var(--sans); fill: var(--ink-faint); }
-.request { fill: var(--ink); stroke: var(--surface-raised); stroke-width: 2; }
-.miss { stroke: var(--c-loss); stroke-width: 2; stroke-linecap: round; }
-.guess-line { stroke: var(--c-param); stroke-width: 2.5; stroke-linecap: round; }
-.tried { fill: var(--c-loss); opacity: 0.75; }

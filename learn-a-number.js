@@ -126,9 +126,9 @@
     previousGuess.value = null;
     guess.value = HAND_START;
   });
-  byId("hide-loss").addEventListener("change", (event) => {
-    byId("hand-score").hidden = event.target.checked;
-  });
+  const lossHidden = signal("lossHidden", false);
+  X.bindCheckbox(byId("hide-loss"), lossHidden);
+  effect([lossHidden], (hidden) => (byId("hand-score").hidden = hidden));
 
   effect([guess, previousGuess], (w, before) => {
     const loss = LOSSES.squared(w, TRIPS);
@@ -218,9 +218,7 @@
       button.setAttribute("aria-pressed", String(button.dataset.loss === kind));
     }
   });
-  const typoBox = byId("typo");
-  typoBox.addEventListener("change", () => (typo.value = typoBox.checked));
-  effect([typo], (withTypo) => (typoBox.checked = withTypo));
+  X.bindCheckbox(byId("typo"), typo);
 
   effect([run, otherRun, k, lossKind], (steps, other, upTo, kind) => {
     const frame = traceFrame(runSvg);

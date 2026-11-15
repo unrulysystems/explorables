@@ -12,9 +12,9 @@ build.
 ## Pages
 
 The outline, in reading order. Each page's prerequisites come before it. Pages
-not yet built are marked *planned*. `gradient-descent.html` is an earlier draft
-that covered pages 3 and 4 together; page 4 will be built from its two-weight
-section, and the draft removed then.
+not yet built are marked *planned*. `gradient-descent.html` is the two-weight
+section of an earlier draft, kept as the starting point for page 4 and removed
+when that page is built.
 
 1. **Learning a number from examples** (`learn-a-number.html`)
    - Idea: a program can find a number it was never told by guessing, scoring
@@ -135,7 +135,10 @@ section, and the draft removed then.
    - Why: an embedding is the same whatever surrounds the word, but meaning is
      not ("river bank", "bank loan"), so each position has to gather its
      context. The name "transformer" for the whole design is not an
-     explanation: its author picked it partly for the sound.
+     explanation: Jakob Uszkoreit, one of its authors, is reported to have
+     picked it because he liked the sound of the word
+     ([Marche, 2024](https://www.newyorker.com/science/annals-of-artificial-intelligence/was-linguistic-ai-created-by-accident);
+     confirm the wording against the article when the page is built).
    - Surprise: the output is a blend, not a lookup, and masking a position
      removes it entirely.
    - Assumes: pages 5, 7 and 8.
@@ -151,7 +154,7 @@ softmax.
 Every page loads two shared files and adds its own script:
 
 - `theme.css`: layout, typography, and the meaning colors. Each quantity keeps
-  one color everywhere it appears (`--c-param`, `--c-rate`, `--c-loss`).
+  one color everywhere it appears (`--c-param`, `--c-rate`, `--c-loss`, `--c-slope`).
 - `explorable.js`: reactive state (`X.signal`, `X.derived`, `X.effect`) and
   the inline elements:
   - `<x-scrub>`: a number in a sentence that the reader drags.

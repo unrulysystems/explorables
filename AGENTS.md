@@ -62,7 +62,7 @@ Every page opens with a short section that does three jobs: show why the idea ma
 
 - Figures are pure functions of model output; nothing moves unless the model says so.
 - When data is chosen for convenience (for example, so the best fit is a round number), say so in a code comment.
-- Each quantity keeps one meaning color everywhere: prose underline, control, and mark. Before adding or changing a meaning color, check that the set stays distinguishable under color-vision deficiency in light and dark mode, and give every colored mark a text label, because two of the three hues sit under 3:1 contrast against the light surface.
+- Each quantity keeps one meaning color everywhere: prose underline, control, and mark. Before adding or changing a meaning color, check that the set stays distinguishable under color-vision deficiency in light and dark mode, and give every colored mark a text label, because three of the four hues sit under 3:1 contrast against the light surface.
 
 ## Mechanics and verification
 
