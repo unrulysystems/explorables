@@ -141,7 +141,7 @@
     <figure id="fig-sweep">
       <svg id="sweep" viewBox="0 0 460 300" role="img" aria-label="Steps to settle for each learning rate from 0.0001 to 0.0025"></svg>
       <p class="log" id="sweep-log"></p>
-      <figcaption><strong>Each dot is one run</strong> from a guess of 1, at the rate below it. Dots in the band along the top had not settled after 200 steps. The orange line marks the current η, and the line under the chart reads its dot. Point at another dot to read it; click to replay that single run in the figure above.</figcaption>
+      <figcaption><strong>Each dot is one run</strong> from a guess of 1, at the rate below it. Dots in the band along the top had not settled after 200 steps. The orange line marks the current η, and the line under the chart reads its dot. Point at another dot to read it; click to replay that single run in the run figure under the first prediction.</figcaption>
     </figure>
 
     <p>The dots make a valley with one gentle side and one cliff. From the left, raising the rate helps: <x-show bind="settleAt0001" digits="0"></x-show> steps at 0.0001, <x-show bind="settleAt0005" digits="0"></x-show> at 0.0005, <x-show bind="settleAt0010" digits="0"></x-show> at 0.0010. Past 1 ÷ 948 the multiplier is negative and the count climbs again, because the swings take longer to fade: <x-show bind="settleAt0015" digits="0"></x-show> steps at 0.0015, <x-show bind="settleAt0020" digits="0"></x-show> at 0.0020. At 0.0021 the multiplier is −0.99 and the run needs over a thousand steps. At 2 ÷ 948, about 0.00211, the multiplier reaches −1, and past it no number of steps is enough.</p>

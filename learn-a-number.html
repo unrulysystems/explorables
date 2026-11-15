@@ -133,7 +133,7 @@
       <figcaption><strong>Time runs down the chart.</strong> Each row is one step: the blue dot is the guess, the orange rings are the two nudged guesses the program scored. The dashed grey path is the same run under the other loss. Press Play, or drag the start.</figcaption>
     </figure>
 
-    <p>From a start of <x-show bind="start" digits="1" color="param"></x-show> the program reaches <x-show bind="runEnd" digits="3" color="param"></x-show> in <x-show bind="runSteps" digits="0"></x-show> steps. Each step it learns nothing but two scores, and still it ends on the number you got by dividing. Notice when the nudge halves: only once the guess is close, because that is when both directions start to lose.</p>
+    <p>From a start of <x-show bind="start" digits="1" color="param"></x-show> the program reaches <x-show bind="runEnd" digits="3" color="param"></x-show> in <x-show bind="runSteps" digits="0"></x-show> steps. Each step it learns nothing but two scores. On the seven clean trips that is enough to end on the number you got by dividing. Notice when the nudge halves: only once the guess is close, because that is when both directions start to lose.</p>
 
     <h2>Every start at once</h2>
     <p>One run depends on where it starts. Step up a level and run the program from twenty starting guesses, from 0.2 to 4.0, with the same loss and the same trips.</p>

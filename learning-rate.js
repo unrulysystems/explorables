@@ -145,6 +145,16 @@
   /* ---------- Figure: stepping by hand at a rate the reader sets ---------- */
 
   const STEP_DIGITS = 4;
+
+  /* Which way the loss moved over one step. Near the answer a step changes the loss by less than
+     rounding error in the arithmetic, and that reads "same", not "up" or "down". */
+  const LOSS_CHANGE_FLOOR = 1e-9;
+  function lossMovement(from, to, trips) {
+    const change = lossAt(to, trips) - lossAt(from, trips);
+    if (Math.abs(change) < LOSS_CHANGE_FLOOR) return "same";
+    return change < 0 ? "down" : "up";
+  }
+
   const handGuess = (steps) => (steps.length === 0 ? START : last(steps).to);
 
   byId("hand-step").addEventListener("click", () => {
@@ -167,7 +177,7 @@
     byId("hand-step").disabled = atLimit;
 
     const rows = taken.map((step, i) => {
-      const lossWent = lossAt(step.to, TRIPS) < lossAt(step.from, TRIPS) ? "down" : "up";
+      const lossWent = lossMovement(step.from, step.to, TRIPS);
       const row = document.createElement("tr");
       if (lossWent === "up") row.className = "wrong-way";
       const from = Object.assign(cell(plain(step.from, 3)), { className: "wide" });
