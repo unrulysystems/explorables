@@ -12,9 +12,7 @@ build.
 ## Pages
 
 The outline, in reading order. Each page's prerequisites come before it. Pages
-not yet built are marked *planned*. `gradient-descent.html` is the two-weight
-section of an earlier draft, kept as the starting point for page 4 and removed
-when that page is built.
+not yet built are marked *planned*.
 
 1. **Learning a number from examples** (`learn-a-number.html`)
    - Idea: a program can find a number it was never told by guessing, scoring
@@ -56,19 +54,22 @@ when that page is built.
    - Assumes: page 2.
    - Afterwards: for given trips, work out the steepness, the largest rate
      that settles and the rate that lands in one step.
-4. **Two weights, one learning rate** (*planned*; draft in `gradient-descent.html`)
-   - Idea: with several weights, one rate must serve steep and gentle
-     directions at once, and the steepest sets the limit. Example: a taxi fare
-     as base + rate × distance.
+4. **Two weights, one learning rate** (`two-weights.html`)
+   - Idea: with two weights there are two slopes and one learning rate. Each
+     weight has its own steepness, twice the average of its input squared,
+     and the steeper weight sets the limit for both. Example: a taxi fare as
+     base + price × distance.
    - Why: a real model's weights do not all sit on equally steep ground, but
      the step size is shared, so the steepest direction caps it for all.
-   - Surprise: the units of an input decide how hard learning is. Measuring
-     distance in metres instead of km stretches the valley so the same data
-     learns far more slowly, which is why inputs are rescaled and why
-     optimizers such as Adam give each weight its own step size.
+   - Surprise: the units of an input decide how hard learning is. Writing
+     distance in metres instead of km makes the price's steepness a million
+     times larger and the usable rate a million times smaller, so the base
+     barely moves in 100,000 steps; in tens of km the same rides take 35.
+     This is why inputs are rescaled and why optimizers such as Adam give each
+     weight its own step size.
    - Assumes: page 3.
    - Afterwards: say which of two weights limits the rate, and what rescaling
-     an input does to it.
+     an input does to its steepness and limit.
 5. **Scores into probabilities** (*planned*)
    - Idea: a next-word model gives each candidate word a score; softmax turns
      the scores into probabilities.
