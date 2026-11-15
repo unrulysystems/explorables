@@ -138,6 +138,15 @@
 
   const STEP_DIGITS = 4;
 
+  /* Which way the loss moved over one step. Near the answer a step changes the loss by less than
+     rounding error in the arithmetic, and that reads "same", not "up" or "down". */
+  const LOSS_CHANGE_FLOOR = 1e-9;
+  function lossMovement(from, to) {
+    const change = lossAt(to) - lossAt(from);
+    if (Math.abs(change) < LOSS_CHANGE_FLOOR) return "same";
+    return change < 0 ? "down" : "up";
+  }
+
   function takeStep(direction) {
     const here = last(handPath.value);
     const next = here + direction * Math.abs(stepFrom(here));
@@ -161,7 +170,7 @@
 
     const rows = path.slice(1).map((after, i) => {
       const before = path[i];
-      const lossWent = lossAt(after) < lossAt(before) ? "down" : "up";
+      const lossWent = lossMovement(before, after);
       const cells = [String(i + 1), format(before, 3), signed(slopeAt(before), 1), signed(after - before, STEP_DIGITS), format(after, 3), lossWent];
       const row = document.createElement("tr");
       if (lossWent === "up") row.className = "wrong-way";

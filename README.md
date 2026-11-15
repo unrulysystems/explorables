@@ -12,8 +12,9 @@ build.
 ## Pages
 
 The outline, in reading order. Each page's prerequisites come before it. Pages
-not yet built are marked *planned*; `gradient-descent.html` is a first draft of
-pages 3 and 4 and will be split and reworked to match.
+not yet built are marked *planned*. `gradient-descent.html` is the two-weight
+section of an earlier draft, kept as the starting point for page 4 and removed
+when that page is built.
 
 1. **Learning a number from examples** (`learn-a-number.html`)
    - Idea: a program can find a number it was never told by guessing, scoring
@@ -33,8 +34,8 @@ pages 3 and 4 and will be split and reworked to match.
      examples in one calculation, gives the nudge direction without trying
      both ways. The curve stays hidden; the reader sees only the current loss
      and slope, and takes the steps.
-   - Why: trying both ways costs one run per weight, hopeless with billions
-     of them. The loss changes smoothly as a weight changes, so its slope
+   - Why: trying both ways costs two scorings per weight on every step,
+     hopeless with billions of them. The loss changes smoothly as a weight changes, so its slope
      exists, and one calculation gives every weight's direction at once.
    - Surprise: on a bowl, steeper ground means farther from the bottom, so
      stepping in proportion to the slope takes big steps far away and small
@@ -42,17 +43,20 @@ pages 3 and 4 and will be split and reworked to match.
    - Assumes: page 1.
    - Afterwards: compute the slope of squared error for one weight and take
      one step by hand.
-3. **How big a nudge: the learning rate** (draft in `gradient-descent.html`)
-   - Idea: the step is the learning rate times the slope; on a bowl, each step
-     multiplies the distance to the bottom by the same number, 1 − 2aη.
+3. **How big a nudge: the learning rate** (`learning-rate.html`)
+   - Idea: the step is the learning rate η times the slope. For one weight
+     scored by squared misses, the slope is a fixed steepness times the
+     distance to the answer, so each step multiplies that distance by the same
+     number, 1 − steepness × η.
    - Why: the slope only describes the ground where you stand; a big step
      lands somewhere it did not describe.
    - Surprise: a slightly bigger rate can turn settling into blowing up. The
-     edge is a cliff, and where it sits depends on how steep the bowl is.
+     edge is a cliff, and where it sits depends on the steepness: one long,
+     correctly logged trip moves it sevenfold.
    - Assumes: page 2.
-   - Afterwards: for a given bowl, name the largest rate that settles and the
-     rate that lands in one step.
-4. **Two weights, one learning rate** (draft in `gradient-descent.html`)
+   - Afterwards: for given trips, work out the steepness, the largest rate
+     that settles and the rate that lands in one step.
+4. **Two weights, one learning rate** (*planned*; draft in `gradient-descent.html`)
    - Idea: with several weights, one rate must serve steep and gentle
      directions at once, and the steepest sets the limit. Example: a taxi fare
      as base + rate × distance.
@@ -131,7 +135,10 @@ pages 3 and 4 and will be split and reworked to match.
    - Why: an embedding is the same whatever surrounds the word, but meaning is
      not ("river bank", "bank loan"), so each position has to gather its
      context. The name "transformer" for the whole design is not an
-     explanation: its author picked it partly for the sound.
+     explanation: Jakob Uszkoreit, one of its authors, is reported to have
+     picked it because he liked the sound of the word
+     ([Marche, 2024](https://www.newyorker.com/science/annals-of-artificial-intelligence/was-linguistic-ai-created-by-accident);
+     confirm the wording against the article when the page is built).
    - Surprise: the output is a blend, not a lookup, and masking a position
      removes it entirely.
    - Assumes: pages 5, 7 and 8.
@@ -147,7 +154,7 @@ softmax.
 Every page loads two shared files and adds its own script:
 
 - `theme.css`: layout, typography, and the meaning colors. Each quantity keeps
-  one color everywhere it appears (`--c-param`, `--c-rate`, `--c-loss`).
+  one color everywhere it appears (`--c-param`, `--c-rate`, `--c-loss`, `--c-slope`).
 - `explorable.js`: reactive state (`X.signal`, `X.derived`, `X.effect`) and
   the inline elements:
   - `<x-scrub>`: a number in a sentence that the reader drags.

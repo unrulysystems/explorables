@@ -10,10 +10,12 @@
      X.mount();
 
    Elements:
-     <x-scrub bind="eta" min="0" max="1" step="0.01" color="rate">  drag or arrow keys
+     <x-scrub bind="eta" min="0" max="1" step="0.01" color="rate">  drag or arrow keys; label="…" names it for assistive technology
      <x-show bind="loss" digits="3">                                 live value in prose
      <x-predict> buttons[data-answer], one [data-correct], [data-reveal] block
      <x-player bind="k" max="20">                                    play / step through time; max may change
+
+   A checkbox that holds page state is tied to its signal with X.bindCheckbox(input, signal).
 */
 "use strict";
 
@@ -124,6 +126,8 @@
 
       this.tabIndex = 0;
       this.setAttribute("role", "slider");
+      const label = this.getAttribute("label");
+      if (label !== null) this.setAttribute("aria-label", label);
       this.setAttribute("aria-valuemin", String(this.min));
       this.setAttribute("aria-valuemax", String(this.max));
       this.style.setProperty("--c", `var(--c-${this.getAttribute("color") ?? "param"})`);
@@ -280,6 +284,19 @@
     }
   }
 
+  /* Ties a checkbox to a boolean signal, which stays the single source of truth. When the reader comes back
+     to the page, the browser may restore the box to the tick it had before, after the page's scripts have
+     already run with the signal's initial value; the box is then set back to the signal. */
+  function bindCheckbox(input, state) {
+    const show = () => {
+      input.checked = state.value;
+    };
+    input.addEventListener("change", () => (state.value = input.checked));
+    state.subscribe(show);
+    window.addEventListener("pageshow", show);
+    show();
+  }
+
   function mount() {
     customElements.define("x-scrub", Scrub);
     customElements.define("x-show", Show);
@@ -329,5 +346,5 @@
     label();
   }
 
-  window.X = { signal, derived, effect, mount, lookup, clamp, format, svg, linear, logarithmic, pointerIn, initThemeToggle };
+  window.X = { signal, derived, effect, mount, bindCheckbox, lookup, clamp, format, svg, linear, logarithmic, pointerIn, initThemeToggle };
 })();

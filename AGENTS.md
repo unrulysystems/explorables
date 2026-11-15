@@ -6,7 +6,7 @@ An explorable teaches **one idea**, using the **smallest model** that makes it v
 
 ## Plan the outline before building pages
 
-The `Pages` list in `README.md` is the outline. Before writing a page, add its line:
+The `Pages` list in `README.md` is the outline. Before writing a page, add its entry, which has five lines:
 
 - **Idea:** the one thing the page teaches.
 - **Why:** the chain of whys under the idea (why it exists, why it works this way, why its key term is named so), followed until it reaches the page's Assumes line.
@@ -62,7 +62,7 @@ Every page opens with a short section that does three jobs: show why the idea ma
 
 - Figures are pure functions of model output; nothing moves unless the model says so.
 - When data is chosen for convenience (for example, so the best fit is a round number), say so in a code comment.
-- Each quantity keeps one meaning color everywhere: prose underline, control, and mark. Validate any new palette before use.
+- Each quantity keeps one meaning color everywhere: prose underline, control, and mark. Before adding or changing a meaning color, check that the set stays distinguishable under color-vision deficiency in light and dark mode, and give every colored mark a text label, because three of the four hues sit under 3:1 contrast against the light surface.
 
 ## Mechanics and verification
 

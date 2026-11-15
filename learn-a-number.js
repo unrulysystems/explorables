@@ -126,9 +126,9 @@
     previousGuess.value = null;
     guess.value = HAND_START;
   });
-  byId("hide-loss").addEventListener("change", (event) => {
-    byId("hand-score").hidden = event.target.checked;
-  });
+  const lossHidden = signal("lossHidden", false);
+  X.bindCheckbox(byId("hide-loss"), lossHidden);
+  effect([lossHidden], (hidden) => (byId("hand-score").hidden = hidden));
 
   effect([guess, previousGuess], (w, before) => {
     const loss = LOSSES.squared(w, TRIPS);
@@ -186,10 +186,15 @@
     };
   }
 
+  const GRID_STEPS = [0, 8, 16, 24];
+
+  /* The row for a label under a run's last step: one row down, or two when a grid line is drawn on that row. */
+  const labelRowBelow = (endStep) => (GRID_STEPS.includes(endStep + 1) ? endStep + 2 : endStep + 1);
+
   /* Axes for a chart of guess (across) against step (down), with the true km per mile marked. */
   function traceAxes({ area, xOf, yOf }) {
     const nodes = [];
-    for (const step of [0, 8, 16, 24]) {
+    for (const step of GRID_STEPS) {
       nodes.push(svg("line", { class: "grid", x1: area.left, x2: area.right, y1: yOf(step), y2: yOf(step) }));
       nodes.push(text(area.left - 6, yOf(step) + 4, String(step), { class: "tick", "text-anchor": "end" }));
     }
@@ -218,9 +223,7 @@
       button.setAttribute("aria-pressed", String(button.dataset.loss === kind));
     }
   });
-  const typoBox = byId("typo");
-  typoBox.addEventListener("change", () => (typo.value = typoBox.checked));
-  effect([typo], (withTypo) => (typoBox.checked = withTypo));
+  X.bindCheckbox(byId("typo"), typo);
 
   effect([run, otherRun, k, lossKind], (steps, other, upTo, kind) => {
     const frame = traceFrame(runSvg);
@@ -230,7 +233,7 @@
 
     nodes.push(svg("polyline", { class: "trace-path other", points: pathPoints(other, frame) }));
     const otherEnd = last(other);
-    nodes.push(text(xOf(otherEnd.w) + 6, yOf(other.length - 1) + 12, LOSS_NAME[OTHER_LOSS[kind]], { class: "tick" }));
+    nodes.push(text(xOf(otherEnd.w) + 6, yOf(labelRowBelow(other.length - 1)) + 4, LOSS_NAME[OTHER_LOSS[kind]], { class: "tick" }));
 
     const visible = steps.slice(0, shown + 1);
     nodes.push(svg("polyline", { class: "trace-path", points: pathPoints(visible, frame) }));

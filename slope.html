@@ -15,11 +15,12 @@
     .trips tr.wrong-way td { color: var(--c-rate); }
     .pull-bar { position: relative; height: 0.7rem; }
     .pull-bar::before { content: ""; position: absolute; left: 50%; top: -0.3rem; bottom: -0.3rem; border-left: 1px solid var(--line-strong); }
-    .pull-bar span { position: absolute; top: 0; bottom: 0; background: var(--c-loss); border-radius: 2px; }
+    .pull-bar span { position: absolute; top: 0; bottom: 0; background: var(--c-slope); border-radius: 2px; }
     .scoreboard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.5rem; font: 0.9375rem var(--sans); color: var(--ink-muted); margin-bottom: 1rem; }
     .scoreboard .big { font: 600 1.6rem var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
     .scoreboard .big.param { text-decoration: underline 3px var(--c-param); text-underline-offset: 0.2em; }
     .scoreboard .big.loss { text-decoration: underline 3px var(--c-loss); text-underline-offset: 0.2em; }
+    .scoreboard .big.slope { text-decoration: underline 3px var(--c-slope); text-underline-offset: 0.2em; }
     .scoreboard .big.rate { text-decoration: underline 3px var(--c-rate); text-underline-offset: 0.2em; }
     .buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .pill[aria-pressed="true"] { border-color: var(--ink); border-width: 2px; }
@@ -55,7 +56,7 @@
 
     <p>The program on the <a href="learn-a-number.html">previous page</a> learned km per mile by trying each nudge both ways: score the guess a little higher, score it a little lower, keep the better one. That costs two scorings for its one weight on every step, and a scoring means running the model on every example.</p>
     <p>GPT-3 has 175 billion weights (<a href="https://arxiv.org/abs/2005.14165">Brown et al., 2020</a>). Trying each one both ways would take 350 billion runs of the whole model for a single step of training, and training takes many thousands of steps. Real training does each step for about the cost of three runs: one to score the examples, and about two more to work out which way every weight should move (<a href="https://arxiv.org/abs/2001.08361">Kaplan et al., 2020</a>, §2.1).</p>
-    <p>Those two extra runs compute the loss's <span class="v loss">slope</span> at the current guess: how much the loss changes for each unit the guess moves. A negative slope means the loss falls as the guess rises, so the guess should go up; a positive slope means it should come down. Across many weights, the list of slopes is called the <em>gradient</em>, an old word for how steeply a road or railway climbs, from a Latin root meaning a step (<a href="https://www.etymonline.com/word/gradient">Etymonline</a>).</p>
+    <p>Those two extra runs compute the loss's <span class="v slope">slope</span> at the current guess: how much the loss changes for each unit the guess moves. A negative slope means the loss falls as the guess rises, so the guess should go up; a positive slope means it should come down. Across many weights, the list of slopes is called the <em>gradient</em>, an old word for how steeply a road or railway climbs, from a Latin root meaning a step (<a href="https://www.etymonline.com/word/gradient">Etymonline</a>).</p>
     <p>This page works it out for the one weight from the previous page, <em>km = <span class="v param">w</span> × miles</em>, on the same seven trips, and then lets the slope steer.</p>
 
     <h2>Measure it first</h2>
@@ -83,13 +84,13 @@
       <figcaption><strong>Pick smaller and smaller moves.</strong> Each row is one scoring of the seven trips; the last line is the measured slope.</figcaption>
     </figure>
 
-    <p>A move of 0.1 gives −530. A move of 0.01 gives −573, and 0.001 gives −577. The answers stop changing as the move shrinks, settling near −577.5. That settling is what makes the slope a single number at a single guess. It happens because the loss is built from multiplying and squaring, which bend smoothly: look closely enough and any smooth curve looks straight, and a straight line has one steepness.</p>
+    <p>A move of 0.1 gives −530. A move of 0.01 gives −573, and 0.001 gives −577. The answers stop changing as the move shrinks, settling near −577.5. That settling is what makes the slope a single number at a single guess. It happens because the loss is built from multiplying and squaring, which bend smoothly: look closely enough and any smooth curve looks straight, and a straight line has one slope.</p>
     <p>Measuring still costs a scoring per weight, though. The useful part is that nobody has to measure.</p>
 
     <h2>Each trip pulls</h2>
     <p>Follow one trip through a tiny move. If the guess rises by a sliver, the trip's prediction, <span class="v param">w</span> × miles, rises by miles times that sliver, and so does its miss. A miss of −10 that grows by 0.01 becomes −9.99, and its square drops from 100 to 99.8001: a change of about 2 × miss × 0.01. Squares always change that way under small moves, because the sliver squared is too small to count.</p>
-    <p>Put together, each trip changes the loss by about 2 × miles × miss for every unit the guess moves. Call that the trip's <span class="v loss">pull</span>. The loss is an average over trips, so its slope is the average pull:</p>
-    <p class="equation"><span class="v loss">slope</span> = average of 2 × miles × (<span class="v param">w</span> × miles − km)</p>
+    <p>Put together, each trip's squared miss changes by about 2 × miles × miss for every unit the guess moves. Call that the trip's <span class="v slope">pull</span>. The loss is an average over trips, so its slope is the average pull:</p>
+    <p class="equation"><span class="v slope">slope</span> = average of 2 × miles × (<span class="v param">w</span> × miles − km)</p>
     <p>That reads: a trip pulls hard when it misses by a lot, and harder still when it is long, because on a long trip every bit of the guess is multiplied by many miles.</p>
 
     <figure id="fig-pull">
@@ -105,8 +106,8 @@
 
     <h2>Step against the slope</h2>
     <p>The slope says which way: against its sign. It also suggests how far. A simple rule, and the one real training starts from, is to step a fixed fraction of the slope:</p>
-    <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − 0.0005 × <span class="v loss">slope</span></p>
-    <p>That reads: move against the slope, by 0.0005 of it. At <span class="v param">w</span> = 1 the slope is −577.5, so the first step is +0.289, up toward the answer. The 0.0005 is a fixed number picked to suit these trips; how to pick it is the subject of the next page.</p>
+    <p class="equation">new <span class="v param">w</span> = <span class="v param">w</span> − 0.0005 × <span class="v slope">slope</span></p>
+    <p>That reads: move against the slope, by 0.0005 of it. At <span class="v param">w</span> = 1 the slope is −577.5, so the first step is +0.289, up toward the answer. The 0.0005 is a fixed number picked to suit these trips; how to pick it is the subject of the <a href="learning-rate.html">next page</a>.</p>
 
     <x-predict id="predict-steps">
       <p class="predict-label">Predict first</p>
@@ -126,7 +127,7 @@
       <div class="scoreboard">
         <span>guess <span class="big param" id="hand-guess"></span></span>
         <span>loss <span class="big loss" id="hand-loss"></span></span>
-        <span>slope <span class="big loss" id="hand-slope"></span></span>
+        <span>slope <span class="big slope" id="hand-slope"></span></span>
       </div>
       <div class="controls" style="margin-bottom: 0">
         <span class="buttons">
@@ -184,7 +185,7 @@
     </figure>
 
     <aside class="limits">
-      <p><strong>Where this stops matching real training.</strong> A model with many weights and layers does not have a perfect bowl for a loss, so the slope is proportional to the distance only close to the bottom; far away, a steep slope does not always mean a long way to go. The fixed 0.0005 was picked for these trips. Longer trips make the slope steeper, and the same fraction would overshoot, which is where the next page begins. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>
+      <p><strong>Where this stops matching real training.</strong> A model with many weights and layers does not have a perfect bowl for a loss, so the slope is proportional to the distance only close to the bottom; far away, a steep slope does not always mean a long way to go. The fixed 0.0005 was picked for these trips. Longer trips make the slope steeper, and the same fraction would overshoot, which is where the <a href="learning-rate.html">next page</a> begins. And real training computes its slopes on a fresh batch of examples at each step, so they are noisy estimates rather than exact.</p>
     </aside>
 
     <h2>Try it without the page</h2>
