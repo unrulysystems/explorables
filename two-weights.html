@@ -27,10 +27,14 @@
     .note { font: 0.8125rem/1.5 var(--sans); color: var(--ink-muted); margin: 0.5rem 0 0; }
     .trace-dot { fill: var(--c-param); }
     .step-arrow { stroke: var(--c-rate); stroke-width: 2; }
-    #hand-log[hidden], #hand-earlier[hidden], #fig-growing[hidden], #fig-units[hidden] { display: none; }
+    #hand-log[hidden], #hand-earlier[hidden], .after-crawl[hidden], #fig-growing[hidden], #fig-units[hidden] { display: none; }
+    .unit-short { display: none; }
     #hand-log { margin-top: 1rem; }
     @media (max-width: 560px) {
       .trips .wide { display: none; }
+      .trips.opener td, .trips.opener th { padding-left: 0.9rem; }
+      .unit-full { display: none; }
+      .unit-short { display: inline; }
       #fig-units .trips { font-size: 0.8125rem; }
       #fig-units .trips th, #fig-units .trips td { padding-right: 0.35rem; }
       #fig-units .pill { padding-left: 0.55rem; padding-right: 0.55rem; }
@@ -57,7 +61,7 @@
       <thead><tr><th>km</th><th>metres</th><th>fare</th></tr></thead>
       <tbody id="log-rows"></tbody>
     </table>
-    <p>Each hands their log to the program from the last three pages and asks it to learn how the fare is worked out. The rides are the same and the fares are the same; 4.0 km is 4,000 m either way. One program has the answer in under a thousand steps. The other has barely started after a hundred thousand.</p>
+    <p>Each hands their log to the program from the <a href="learning-rate.html">last three pages</a> and asks it to learn how the fare is worked out. The rides are the same and the fares are the same; 4.0 km is 4,000 m either way. One program has the answer in under a thousand steps. The other has barely started after a hundred thousand.</p>
     <p>To see which one, and how a unit can matter to a program that only multiplies and adds, the model needs a second weight. A fare has a fixed part and a part that grows with distance:</p>
     <p class="equation">fare = <span class="v param">base</span> + <span class="v param">price</span> × km</p>
     <p>That reads: every ride pays the <span class="v param">base</span> once, plus the <span class="v param">price</span> for each kilometre. The program has to find both numbers. The fares above are a toy, made from a base of 3.00 and a price of 1.80 per km and rounded to ten cents, so you can check what the program finds. A language model has billions of weights instead of two, and they share one learning rate the way these two will.</p>
@@ -80,7 +84,7 @@
     <p>That reads: one step moves both weights at once, each by <span class="v rate">η</span> of its own slope. At <span class="v rate">η</span> = 0.005 the first step moves the base by <x-show bind="firstStepBase"></x-show> and the price by <x-show bind="firstStepPrice"></x-show>.</p>
 
     <h2>Step both at once</h2>
-    <p>Below, you set <span class="v rate">η</span> and take the steps, one at a time or ten at a time. You see what the program sees: both weights, the loss, and both slopes.</p>
+    <p>Below, you set <span class="v rate">η</span> and take the steps, one, ten or a hundred at a time. You see what the program sees: both weights, the loss, and both slopes.</p>
 
     <figure id="fig-hand">
       <div class="scoreboard">
@@ -97,6 +101,7 @@
         <span class="buttons">
           <button type="button" class="pill" id="hand-step">Take a step</button>
           <button type="button" class="pill" id="hand-ten">Take ten steps</button>
+          <button type="button" class="pill" id="hand-hundred">Take a hundred</button>
           <button type="button" class="pill" id="hand-reset">Back to the start</button>
         </span>
       </div>
@@ -123,7 +128,7 @@
       </div>
     </x-predict>
 
-    <figure id="fig-run">
+    <figure id="fig-run" class="after-crawl" hidden>
       <div class="controls">
         <span>learning rate <span class="v rate">η</span> = <x-scrub bind="rate" label="learning rate" min="0.001" max="0.013" step="0.0005" digits="4" color="rate"></x-scrub></span>
       </div>
@@ -133,9 +138,9 @@
       <figcaption><strong>Time runs down both charts.</strong> The left one follows the base, the right one the price, over the same sixty steps from a base of 1.00 and a price of 1.00. Orange lines are the steps and the blue dot is where the weight is now. The dashed lines mark the answers. Drag η, or press Play.</figcaption>
     </figure>
 
-    <p>Two things in that run need explaining. The first is that the price stops near 1.95, above its answer, and stays there. With the base still too low, every predicted fare is short by about the same amount, and the best the price can do about that is to run a little high. The program finds that compromise within a few steps. From then on the two weights can only improve together, the base rising and the price easing back down, and they do it at the base's pace.</p>
-    <p>The second is the base's pace. On the last page the steepness was twice the average of miles squared. Miles were that weight's input, so the rule is: a weight's steepness is twice the average of its input squared. The price's input is km, and the average of km squared here is <x-show bind="averageKmSquared"></x-show>, so its steepness is <x-show bind="priceSteepness"></x-show>. The base's input is always 1, so its steepness is 2 × 1 = 2.</p>
-    <p>Now put the same <span class="v rate">η</span> into both multipliers. At 0.005 the price's is 1 − 184 × 0.005 = 0.08: it covers 92% of its distance in a step. The base's is 1 − 2 × 0.005 = 0.99: it covers one percent in a step, at best. In the run it manages less than that, because while the price is running high it hides part of the base's error.</p>
+    <p class="after-crawl" hidden>Two things in that run need explaining. The first is that the price stops near 1.95, above its answer, and stays there. With the base still too low, every predicted fare is short by about the same amount, and the best the price can do about that is to run a little high. The program finds that compromise within a few steps. From then on the two weights can only improve together, the base rising and the price easing back down, and they do it at the base's pace.</p>
+    <p class="after-crawl" hidden>The second is the base's pace. On the <a href="learning-rate.html">last page</a> the steepness was twice the average of miles squared. Miles were that weight's input, so the rule is: a weight's steepness is twice the average of its input squared. The price's input is km, and the average of km squared here is <x-show bind="averageKmSquared"></x-show>, so its steepness is <x-show bind="priceSteepness"></x-show>. The base's input is always 1, so its steepness is 2 × 1 = 2.</p>
+    <p class="after-crawl" hidden>Now put the same <span class="v rate">η</span> into both multipliers. At 0.005 the price's is 1 − 184 × 0.005 = 0.08: it covers 92% of its distance in a step. The base's is 1 − 2 × 0.005 = 0.99: it covers one percent in a step, at best. In the run it manages less than that, because while the price is running high it hides part of the base's error.</p>
 
     <x-predict id="predict-limit">
       <p class="predict-label">Predict again</p>
@@ -190,18 +195,18 @@
       <figcaption><strong>Three logs of the same seven rides.</strong> Each ran for 100,000 steps from the same starting rule, at three quarters of its own largest settling rate. Reaching the answer means both weights are within 0.01 of a base of 3.00 and a price of 1.80 per km. Press a unit to see its run at seven moments in the lower table.</figcaption>
     </figure>
 
-    <p>In kilometres the program reaches the answer in <x-show bind="kmArrivedAt"></x-show> steps. In metres, after 100,000 steps, it has moved the base from 1.000 to <x-show bind="metresBaseAfterLongRun"></x-show>. Nothing the program can see tells it so. The stopping rule from the earlier pages, stop when a step is smaller than 0.0001, would have ended the metres run at step <x-show bind="metresSmallStepsAt"></x-show>, with tiny steps and a wrong answer. A small step means the ground is nearly flat for the rate in use. It does not mean the answer is near.</p>
-    <p>The third row goes the other way. Count distance in tens of kilometres and the price's steepness falls to 1.8, about the same as the base's 2. Neither weight waits for the other, and the program arrives in <x-show bind="tensArrivedAt"></x-show> steps. Between the three rows the rides and the fare rule never changed, only how large the distance numbers are.</p>
+    <p>In kilometres the program reaches the answer in <x-show bind="kmArrivedAt"></x-show> steps. In metres, after 100,000 steps, it has moved the base from 1.000 to <x-show bind="metresBaseAfterLongRun"></x-show>. Nothing the program can see tells it so. The stopping rule from the earlier pages, stop when a step moves no weight by more than 0.0001 (with the price counted per km), would have ended the metres run at step <x-show bind="metresSmallStepsAt"></x-show>, with tiny steps and a wrong answer. A small step means the ground is nearly flat for the rate in use. It does not mean the answer is near.</p>
+    <p>The third row goes the other way. Count distance in tens of kilometres and the price's steepness falls to 1.8, about the same as the base's 2. Neither weight waits for the other, and the program arrives in <x-show bind="tensArrivedAt"></x-show> steps. Its largest settling rate, <x-show bind="tensLimit"></x-show>, is only about half of what either weight would allow alone (2 ÷ 2 and 2 ÷ 1.8). When one weight is far steeper than the other, it sets the limit almost exactly, as the price did in kilometres. When the two are close, the way they lean on each other counts for much more. Between the three rows the rides and the fare rule never changed, only how large the distance numbers are.</p>
     <p>This is why data is rescaled before training, so that every input is a number of about the same size. Large models apply the same idea again inside themselves: <a href="https://arxiv.org/abs/1502.03167">Ioffe and Szegedy (2015)</a> rescale the inputs to each layer and report that it “allows us to use much higher learning rates”. The other remedy is to stop sharing. Optimizers such as Adam give each weight its own step size, worked out from that weight's own recent slopes; its authors note that the result is “invariant to diagonal rescaling of the gradients” (<a href="https://arxiv.org/abs/1412.6980">Kingma and Ba, 2014</a>).</p>
 
     <aside class="limits">
-      <p><strong>Where this stops matching real training.</strong> Two weights are the smallest case. A real model has billions, with steepnesses spread over a wide range, and nobody can choose a unit for each one by hand. Here the two weights lean on each other only a little; in a real model each weight's best value depends on many others, so the steep and gentle directions are blends of weights, not single ones. And as on the last page, a real loss changes its steepness from place to place, so the ceiling on the rate moves during training.</p>
+      <p><strong>Where this stops matching real training.</strong> Two weights are the smallest case. A real model has billions, with steepnesses spread over a wide range, and nobody can choose a unit for each one by hand. Here the two weights lean on each other through one number, the average distance; in a real model each weight's best value depends on many others, so the steep and gentle directions are blends of weights, not single ones. And as on the last page, a real loss changes its steepness from place to place, so the ceiling on the rate moves during training.</p>
     </aside>
 
     <h2>Try it without the page</h2>
     <details class="check">
       <summary>A delivery firm models minutes = base + per-parcel × parcels. In its log the average of parcels squared is 400. Which weight limits the learning rate, and roughly what is the limit? If the log counted parcels in dozens instead, what would happen to that weight's steepness and to its limit?</summary>
-      <p>The per-parcel weight's steepness is 2 × 400 = 800 and the base's is 2, so the per-parcel weight limits the rate, at just under 2 ÷ 800 = 0.0025. Counted in dozens, every input is 12 times smaller and its square 144 times smaller. The average of the input squared becomes 400 ÷ 144, about 2.8, the steepness about 5.6, and that weight's own limit 2 ÷ 5.6, about 0.36: 144 times larger. With the two steepnesses now close, 5.6 and 2, neither weight has to crawl. The pair's limit will be a little below 0.36, because the weights lean on each other.</p>
+      <p>The per-parcel weight's steepness is 2 × 400 = 800 and the base's is 2, so the per-parcel weight limits the rate, at just under 2 ÷ 800 = 0.0025. Counted in dozens, every input is 12 times smaller and its square 144 times smaller. The average of the input squared becomes 400 ÷ 144, about 2.8, the steepness about 5.6, and that weight's own limit 2 ÷ 5.6, about 0.36: 144 times larger. With the two steepnesses now close, 5.6 and 2, neither weight has to crawl. The pair's limit will be below 0.36, and with steepnesses this close it may be well below, because the weights lean on each other.</p>
     </details>
   </main>
 </body>

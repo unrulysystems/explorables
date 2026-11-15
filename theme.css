@@ -237,6 +237,7 @@ x-player .player-readout { min-width: 6.5em; text-align: right; font-variant-num
 }
 .player-toggle:hover, x-predict button:not(:disabled):hover, .pill:hover { border-color: var(--ink); }
 .player-toggle { min-width: 5.2rem; }
+.pill:disabled { cursor: default; opacity: 0.55; }
 
 /* Predict, then reveal */
 x-predict {

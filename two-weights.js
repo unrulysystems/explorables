@@ -63,6 +63,16 @@
     return 2 / steepest;
   }
 
+  /* The least-squares weights for a log: where every run that settles ends up. */
+  function bestFit(distances) {
+    const meanDistance = average(distances);
+    const meanFare = average(FARES);
+    const price =
+      average(distances.map((d, i) => (d - meanDistance) * (FARES[i] - meanFare))) /
+      average(distances.map((d) => (d - meanDistance) ** 2));
+    return { base: meanFare - price * meanDistance, price };
+  }
+
   function stepFrom(weights, rate, distances) {
     const slopes = slopesAt(weights, distances);
     return { base: -rate * slopes.base, price: -rate * slopes.price };
@@ -108,7 +118,16 @@
       if (close && arrivedAt === null) arrivedAt = taken;
       weights = moved(weights, step);
     }
-    return { unit, rate, limit: largestSettlingRate(distances), steepness: steepnessOf(distances), checkpoints, arrivedAt, smallStepsAt };
+    return {
+      unit,
+      rate,
+      limit: largestSettlingRate(distances),
+      steepness: steepnessOf(distances),
+      fit: bestFit(distances),
+      checkpoints,
+      arrivedAt,
+      smallStepsAt,
+    };
   }
 
   const last = (items) => items[items.length - 1];
@@ -140,7 +159,7 @@
   const k = signal("k", RUN_STEPS);
   run.subscribe(() => (k.value = RUN_STEPS));
 
-  const HAND_STEPS_MAX = 200;
+  const HAND_STEPS_MAX = 2000;
   const handSteps = signal("handSteps", []); // every step the reader has taken: { rate, from, to }
 
   const growingRate = signal("growingRate", GROWING_RATE);
@@ -178,6 +197,7 @@
   constant("metresSmallStepsAt", plain(longRunFor("m").smallStepsAt, 0));
   constant("metresBaseAfterLongRun", plain(last(longRunFor("m").checkpoints).weights.base, 3));
   constant("metresLimit", rateText(longRunFor("m").limit));
+  constant("tensLimit", rateText(longRunFor("10km").limit));
 
   X.mount();
   X.initThemeToggle(document.getElementById("theme"));
@@ -241,6 +261,7 @@
   }
   byId("hand-step").addEventListener("click", () => takeHandSteps(1));
   byId("hand-ten").addEventListener("click", () => takeHandSteps(10));
+  byId("hand-hundred").addEventListener("click", () => takeHandSteps(100));
   byId("hand-reset").addEventListener("click", () => (handSteps.value = []));
 
   effect([handSteps, rate], (taken, r) => {
@@ -253,16 +274,17 @@
     byId("hand-slope-base").textContent = plain(slopes.base, 2);
     byId("hand-slope-price").textContent = plain(slopes.price, 2);
     byId("hand-next").textContent = atLimit
-      ? `${HAND_STEPS_MAX} steps taken; press Back to the start.`
+      ? `This figure stops at ${plain(HAND_STEPS_MAX, 0)} steps. Press Back to the start to run again.`
       : `The next step moves the base by ${withSign(-r * slopes.base, 4)} and the price by ${withSign(-r * slopes.price, 4)}.`;
     byId("hand-step").disabled = atLimit;
     byId("hand-ten").disabled = atLimit;
+    byId("hand-hundred").disabled = atLimit;
 
     const firstShown = Math.max(0, taken.length - HAND_ROWS_SHOWN);
     const rows = taken.slice(firstShown).map((step, i) => {
       const lossWent = lossMovement(step.from, step.to);
       const row = rowOf(
-        cell(String(firstShown + i + 1)),
+        cell(plain(firstShown + i + 1, 0)),
         cell(plain(step.rate, 4), "wide"),
         cell(plain(step.to.base, 3)),
         cell(plain(step.to.price, 3)),
@@ -275,7 +297,8 @@
     byId("hand-rows").replaceChildren(...rows);
     byId("hand-log").hidden = rows.length === 0;
     byId("hand-earlier").hidden = firstShown === 0;
-    byId("hand-earlier").textContent = `Steps 1 to ${firstShown} are not shown.`;
+    byId("hand-earlier").textContent =
+      firstShown === 1 ? "Step 1 is not shown." : `Steps 1 to ${plain(firstShown, 0)} are not shown.`;
   });
 
   /* ---------- A pair of run charts: each weight across, step down ---------- */
@@ -362,26 +385,32 @@
   const arrivedText = (entry) =>
     entry.arrivedAt === null ? `over ${plain(LONG_RUN_STEPS, 0)}` : plain(entry.arrivedAt, 0);
 
-  effect([shownUnit], (unitId) => {
-    const unitCell = (entry) => {
-      const button = Object.assign(document.createElement("button"), { type: "button", className: "pill", textContent: entry.unit.name });
-      button.setAttribute("aria-pressed", String(entry.unit.id === unitId));
-      button.addEventListener("click", () => (shownUnit.value = entry.unit.id));
+  // The unit buttons are built once, so the one the reader pressed keeps the keyboard focus.
+  const unitButtons = LONG_RUNS.map((entry) => {
+    const button = Object.assign(document.createElement("button"), { type: "button", className: "pill" });
+    const full = Object.assign(document.createElement("span"), { className: "unit-full", textContent: entry.unit.name });
+    const short = Object.assign(document.createElement("span"), { className: "unit-short", textContent: entry.unit.short });
+    button.append(full, short);
+    button.setAttribute("aria-label", entry.unit.name);
+    button.addEventListener("click", () => (shownUnit.value = entry.unit.id));
+    return { unitId: entry.unit.id, button };
+  });
+  byId("unit-rows").replaceChildren(
+    ...LONG_RUNS.map((entry, i) => {
       const holder = cell("", "unit-cell");
-      holder.append(button);
-      return holder;
-    };
-    byId("unit-rows").replaceChildren(
-      ...LONG_RUNS.map((entry) =>
-        rowOf(
-          unitCell(entry),
-          cell(plain(entry.steepness.base, 0), "wide"),
-          cell(steepnessText(entry.steepness.price)),
-          cell(rateText(entry.limit)),
-          cell(arrivedText(entry)),
-        ),
-      ),
-    );
+      holder.append(unitButtons[i].button);
+      return rowOf(
+        holder,
+        cell(plain(entry.steepness.base, 0), "wide"),
+        cell(steepnessText(entry.steepness.price)),
+        cell(rateText(entry.limit)),
+        cell(arrivedText(entry)),
+      );
+    }),
+  );
+
+  effect([shownUnit], (unitId) => {
+    for (const entry of unitButtons) entry.button.setAttribute("aria-pressed", String(entry.unitId === unitId));
 
     const shown = longRunFor(unitId);
     const unit = unitById(unitId);
@@ -398,12 +427,14 @@
     );
     byId("checkpoint-caption").textContent =
       `Distances in ${unit.name}, at η = ${rateText(shown.rate)}, which is three quarters of that log's largest settling rate. ` +
-      `The answer is a base of 3.00 and ${plain(PRICE_PER_KM_ANSWER / unit.perKm, unit.priceDigits)} per ${unit.short}.`;
+      `The fares were rounded to ten cents, so the best fit is a base of ${plain(shown.fit.base, 3)} and ` +
+      `${plain(shown.fit.price, unit.priceDigits)} per ${unit.short}.`;
   });
 
   /* ---------- Each prediction settles by playing the scene under it ---------- */
 
   byId("predict-crawl").addEventListener("reveal", () => {
+    for (const element of document.querySelectorAll(".after-crawl")) element.hidden = false;
     rate.value = DEFAULT_RATE;
     playerIn("fig-run").play({ fromStart: true });
   });
