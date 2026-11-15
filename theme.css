@@ -18,9 +18,9 @@
   --line: #d6d2c6;
   --line-strong: #a9a59a;
 
-  --c-param: #2a78d6; /* parameters: w, (x, y), the ball and its path */
+  --c-param: #2a78d6; /* weights and guesses: the number, its control, the dot that marks it */
   --c-rate: #eb6834;  /* learning rate η and the steps it causes */
-  --c-loss: #1baf7a;  /* loss: the curve's height, contours, loss charts */
+  --c-loss: #1baf7a;  /* loss and each example's miss */
   --c-slope: #eda100; /* slope of the loss, and each example's pull on it */
 
   --serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
@@ -212,15 +212,8 @@ line.grid { stroke: var(--line); stroke-width: 1; }
 .tick { font: 11px var(--sans); fill: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .label { font: 12px var(--sans); fill: var(--ink-muted); }
 .label-strong { font: 600 12px var(--sans); fill: var(--ink); }
-.trail { fill: var(--c-param); }
-.ball { fill: var(--c-param); stroke: var(--surface-raised); stroke-width: 2.5; }
-.handle { fill: var(--surface-raised); stroke: var(--c-param); stroke-width: 2; cursor: grab; }
-.handle:active { cursor: grabbing; }
-.hit { fill: transparent; cursor: grab; }
 .threshold { stroke: var(--ink-faint); stroke-dasharray: 3 4; }
 .rate-rule { stroke: var(--c-rate); stroke-width: 2; }
-.contour { fill: none; stroke: var(--c-loss); stroke-opacity: 0.45; stroke-width: 1.25; }
-.path2d { fill: none; stroke: var(--c-param); stroke-width: 2; stroke-linejoin: round; }
 
 x-player {
   display: flex;
@@ -244,6 +237,7 @@ x-player .player-readout { min-width: 6.5em; text-align: right; font-variant-num
 }
 .player-toggle:hover, x-predict button:not(:disabled):hover, .pill:hover { border-color: var(--ink); }
 .player-toggle { min-width: 5.2rem; }
+.pill:disabled { cursor: default; opacity: 0.55; }
 
 /* Predict, then reveal */
 x-predict {
